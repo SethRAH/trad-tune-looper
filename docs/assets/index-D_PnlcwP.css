@@ -1,0 +1,202 @@
+:root {
+  --bg: #f7f5f2;
+  --fg: #1e1b16;
+  --muted: #6b6459;
+  --card-bg: #fff;
+  --border: #ddd6cb;
+  --accent: #a8452f;
+  --accent-contrast: #fff;
+  --selected: #f0ddd2;
+  --anchored: #f6c9a8;
+  --current: #ffe9a3;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 1rem;
+  --space-4: 1.5rem;
+  --space-5: 2.5rem;
+  --radius: 0.5rem;
+  --font: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #17140f;
+    --fg: #f2ece2;
+    --muted: #a89e8e;
+    --card-bg: #221e17;
+    --border: #3a342a;
+    --accent: #e0785a;
+    --accent-contrast: #17140f;
+    --selected: #3c2c22;
+    --anchored: #5c3a20;
+    --current: #5c4b1c;
+  }
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font);
+  margin: 0;
+  line-height: 1.5;
+}
+.site-header {
+  padding: var(--space-5) var(--space-3) var(--space-3);
+  text-align: center;
+}
+.site-header h1 {
+  margin: 0 0 var(--space-1);
+  letter-spacing: 0.02em;
+  font-size: 2rem;
+}
+.site-subtitle {
+  color: var(--muted);
+  margin: 0;
+  font-style: italic;
+}
+#tunes {
+  max-width: 48rem;
+  padding: var(--space-3) var(--space-3) var(--space-5);
+  gap: var(--space-4);
+  flex-direction: column;
+  margin: 0 auto;
+  display: flex;
+}
+tune-looper {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3) var(--space-4);
+  display: block;
+}
+.tl-header {
+  align-items: baseline;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  flex-wrap: wrap;
+  display: flex;
+}
+.tl-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.tl-type,
+.tl-timesig,
+.tl-barcount {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.tl-hint-toggle {
+  border: 1px solid var(--border);
+  color: var(--muted);
+  cursor: pointer;
+  background: 0 0;
+  border-radius: 999px;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-left: auto;
+}
+.tl-hint-toggle[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-color: var(--accent);
+}
+.tl-hints {
+  color: var(--muted);
+  gap: var(--space-3);
+  flex-basis: 100%;
+  font-style: italic;
+  display: flex;
+}
+.tl-parts {
+  margin-bottom: var(--space-2);
+  gap: 2px;
+  display: flex;
+}
+.tl-part {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-align: center;
+  font-family: inherit;
+}
+.tl-part:hover {
+  border-color: var(--accent);
+}
+.tl-grid {
+  margin-bottom: var(--space-3);
+  flex-wrap: wrap;
+  gap: 2px;
+  display: flex;
+}
+.tl-cell {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  min-width: 2rem;
+  height: 2rem;
+  color: var(--fg);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+.tl-cell:hover {
+  border-color: var(--accent);
+}
+.tl-cell--anchored {
+  background: var(--anchored);
+  border-color: var(--accent);
+}
+.tl-cell--selected {
+  background: var(--selected);
+  border-color: var(--accent);
+}
+.tl-cell--current {
+  box-shadow: inset 0 0 0 2px var(--current);
+}
+.tl-cell--pickup {
+  cursor: default;
+  pointer-events: none;
+  opacity: 0.6;
+  border-style: dashed;
+  min-width: 0.75rem;
+}
+.tl-transport {
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+  display: flex;
+}
+.tl-play-btn {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  font-size: 1rem;
+}
+.tl-tempo-slider {
+  flex: 1;
+}
+.tl-tempo-readout {
+  color: var(--muted);
+  min-width: 4.5rem;
+}
+.tl-toggles {
+  gap: var(--space-3);
+  color: var(--muted);
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+  display: flex;
+}
+.tl-toggles label {
+  align-items: center;
+  gap: var(--space-1);
+  display: flex;
+}

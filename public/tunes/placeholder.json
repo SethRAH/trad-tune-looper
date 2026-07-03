@@ -1,0 +1,15 @@
+{
+  "id": "placeholder",
+  "title": "Placeholder Reel",
+  "type": "reel",
+  "midi": "tunes/placeholder.mid",
+
+  "parts": [
+    { "name": "A", "startMeasure": 1, "bars": 4, "repeats": 2 },
+    { "name": "B", "startMeasure": 5, "bars": 4, "repeats": 2 }
+  ],
+
+  "hints": {
+    "key": "D"
+  }
+}
