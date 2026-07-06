@@ -3,8 +3,8 @@ import * as Tone from 'tone';
 const TEMPO_MIN = 40;
 const TEMPO_MAX = 180;
 
-function partLabelStyle(part, totalBars) {
-  return `flex-grow: ${part.bars / totalBars}`;
+function partLabelStyle(part) {
+  return `flex: ${part.bars} 1 0`;
 }
 
 export class TuneLooper extends HTMLElement {
@@ -21,7 +21,6 @@ export class TuneLooper extends HTMLElement {
 
   #synth = null;
   #metronomeSynth = null;
-  #scheduledEventIds = [];
   #stopped = true;
 
   set tune(value) {
@@ -82,7 +81,6 @@ export class TuneLooper extends HTMLElement {
     const transport = Tone.getTransport();
     transport.stop();
     transport.cancel(0);
-    this.#scheduledEventIds = [];
     if (this.#synth) {
       this.#synth.dispose();
       this.#synth = null;
@@ -129,11 +127,17 @@ export class TuneLooper extends HTMLElement {
     const suppressNext = this.#restBar;
 
     const transport = Tone.getTransport();
-    const id = transport.scheduleOnce(() => {
-      if (this.#stopped) return;
-      this.#runLoop(nextCursor, selStart, selEnd, suppressNext);
-    }, `${loopEnd}i`);
-    this.#scheduledEventIds.push(id);
+    // Trigger one tick before nextCursor, never on it: this callback
+    // schedules new events *for* nextCursor, and Tone's Timeline snapshots
+    // the event list for a tick before invoking it, so anything scheduled
+    // for the same tick as this callback is silently dropped.
+    transport.scheduleOnce(
+      () => {
+        if (this.#stopped) return;
+        this.#runLoop(nextCursor, selStart, selEnd, suppressNext);
+      },
+      `${nextCursor - 1}i`,
+    );
   }
 
   #buildLoopIteration(cursor, selStart, selEnd, suppressEntryPickup) {
@@ -144,17 +148,16 @@ export class TuneLooper extends HTMLElement {
       const measure = tune.measures[m];
       const isEntryMeasure = m === selStart;
 
-      const pulseId = transport.scheduleOnce(() => {
+      transport.scheduleOnce(() => {
         if (this.#stopped) return;
         this.#currentMeasure = m;
         this.#render();
       }, `${cursor}i`);
-      this.#scheduledEventIds.push(pulseId);
 
       for (const note of measure.notes) {
         if (note.isPickup && isEntryMeasure && suppressEntryPickup) continue;
 
-        const noteId = transport.scheduleOnce(
+        transport.scheduleOnce(
           (time) => {
             if (this.#stopped) return;
             const freq = Tone.Frequency(note.midi, 'midi').toFrequency();
@@ -163,7 +166,6 @@ export class TuneLooper extends HTMLElement {
           },
           `${cursor + note.offsetTicks}i`,
         );
-        this.#scheduledEventIds.push(noteId);
       }
 
       if (this.#metronome) {
@@ -182,13 +184,12 @@ export class TuneLooper extends HTMLElement {
 
     for (let beat = 0; beat < tune.tsNum; beat += 1) {
       const tick = startTick + beat * tune.ticksPerBeat;
-      const id = transport.scheduleOnce((time) => {
+      transport.scheduleOnce((time) => {
         if (this.#stopped) return;
         if (!alwaysClick && !this.#metronome) return;
         const pitch = beat === 0 ? 'C3' : 'C2';
         this.#metronomeSynth.triggerAttackRelease(pitch, '32n', time);
       }, `${tick}i`);
-      this.#scheduledEventIds.push(id);
     }
 
     return startTick + tune.ticksPerMeasure;
@@ -280,11 +281,14 @@ export class TuneLooper extends HTMLElement {
 
     const totalBars = tune.parts.reduce((sum, part) => sum + part.bars, 0);
     const hasBarOnePickup = tune.downbeatTick > 0;
+    const pickupCellHtml = hasBarOnePickup
+      ? '<span class="tl-cell tl-cell--pickup" aria-hidden="true"></span>'
+      : '';
 
     const partsHtml = tune.parts
       .map(
         (part, i) => `
-          <button type="button" class="tl-part" data-part-index="${i}" style="${partLabelStyle(part, totalBars)}">
+          <button type="button" class="tl-part" data-part-index="${i}" style="${partLabelStyle(part)}">
             ${part.name}
           </button>`,
       )
@@ -318,9 +322,12 @@ export class TuneLooper extends HTMLElement {
         <button type="button" class="tl-hint-toggle" aria-pressed="${this.#hintsVisible}">?</button>
         ${hintsHtml}
       </div>
-      <div class="tl-parts">${partsHtml}</div>
+      <div class="tl-parts">
+        ${pickupCellHtml}
+        ${partsHtml}
+      </div>
       <div class="tl-grid">
-        ${hasBarOnePickup ? '<span class="tl-cell tl-cell--pickup" aria-hidden="true"></span>' : ''}
+        ${pickupCellHtml}
         ${gridHtml}
       </div>
       <div class="tl-transport">
