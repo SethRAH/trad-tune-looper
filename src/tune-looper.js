@@ -127,16 +127,23 @@ export class TuneLooper extends HTMLElement {
     const suppressNext = this.#restBar;
 
     const transport = Tone.getTransport();
-    // Trigger one tick before nextCursor, never on it: this callback
-    // schedules new events *for* nextCursor, and Tone's Timeline snapshots
-    // the event list for a tick before invoking it, so anything scheduled
-    // for the same tick as this callback is silently dropped.
+    // Build the next iteration's events right after *this* one starts, not
+    // right before it's due. This callback itself is firing at tick
+    // `cursor` (Tone's Timeline snapshots the event list for the tick
+    // before invoking a callback, so scheduling for that same tick from
+    // inside it gets silently dropped) — one tick later is the earliest
+    // safe point, and it buys a full iteration's worth of lead time before
+    // nextCursor, instead of the single tick we'd have scheduling right at
+    // the boundary. Tone's Transport clock processes ticks in real-time
+    // lookahead batches, not one at a time, so that single tick of margin
+    // isn't reliably enough — this was silently dropping the resumed
+    // measure's downbeat note and click on loop wrap.
     transport.scheduleOnce(
       () => {
         if (this.#stopped) return;
         this.#runLoop(nextCursor, selStart, selEnd, suppressNext);
       },
-      `${nextCursor - 1}i`,
+      `${cursor + 1}i`,
     );
   }
 
