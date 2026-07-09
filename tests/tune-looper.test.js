@@ -118,6 +118,29 @@ describe('<tune-looper>', () => {
     expect(state.selEnd).toBe(3);
   });
 
+  it('selects the whole tune on click', () => {
+    el.querySelector('.tl-select-all').click();
+
+    const state = el.getState();
+    expect(state.selStart).toBe(0);
+    expect(state.selEnd).toBe(3);
+    expect(state.wholeTuneSelected).toBe(true);
+  });
+
+  it('drops out of whole-tune mode when a measure or part is selected afterward', () => {
+    el.querySelector('.tl-select-all').click();
+    expect(el.getState().wholeTuneSelected).toBe(true);
+
+    el.querySelector('[data-measure-index="1"]').click();
+    expect(el.getState().wholeTuneSelected).toBe(false);
+
+    el.querySelector('.tl-select-all').click();
+    expect(el.getState().wholeTuneSelected).toBe(true);
+
+    el.querySelector('[data-part-index="1"]').click();
+    expect(el.getState().wholeTuneSelected).toBe(false);
+  });
+
   it('starts a new selection after a completed range is clicked again', () => {
     el.querySelector('[data-measure-index="0"]').click();
     el.querySelector('[data-measure-index="1"]').click();

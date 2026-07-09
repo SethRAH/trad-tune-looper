@@ -11,6 +11,7 @@ export class TuneLooper extends HTMLElement {
   #tune = null;
   #selStart = null;
   #selEnd = null;
+  #wholeTuneSelected = false;
   #playing = false;
   #bpm = null;
   #restBar = false;
@@ -31,6 +32,7 @@ export class TuneLooper extends HTMLElement {
     this.#bpm = value.practiceTempo;
     this.#selStart = null;
     this.#selEnd = null;
+    this.#wholeTuneSelected = false;
     this.#hintsVisible = false;
     this.#render();
   }
@@ -102,21 +104,40 @@ export class TuneLooper extends HTMLElement {
 
     const selStart = this.#selStart ?? 0;
     const selEnd = this.#selEnd ?? tune.measures.length - 1;
+    const measureSequence = this.#buildMeasureSequence(selStart, selEnd);
 
     let cursor = 0;
     if (this.#countIn) {
       cursor = this.#scheduleMetronomeForMeasure(cursor, /* alwaysClick */ true);
     }
-    this.#runLoop(cursor, selStart, selEnd, true);
+    this.#runLoop(cursor, measureSequence, true);
 
     transport.start();
   }
 
-  #runLoop(cursor, selStart, selEnd, suppressEntryPickup) {
+  #buildMeasureSequence(selStart, selEnd) {
+    if (!this.#wholeTuneSelected) {
+      const seq = [];
+      for (let m = selStart; m <= selEnd; m += 1) seq.push(m);
+      return seq;
+    }
+
+    const seq = [];
+    for (const part of this.#tune.parts) {
+      const partRange = [];
+      for (let m = part.startMeasure; m < part.startMeasure + part.bars; m += 1) {
+        partRange.push(m);
+      }
+      const repeats = part.repeats ?? 1;
+      for (let r = 0; r < repeats; r += 1) seq.push(...partRange);
+    }
+    return seq;
+  }
+
+  #runLoop(cursor, measureSequence, suppressEntryPickup) {
     const loopEnd = this.#buildLoopIteration(
       cursor,
-      selStart,
-      selEnd,
+      measureSequence,
       suppressEntryPickup,
     );
 
@@ -141,19 +162,19 @@ export class TuneLooper extends HTMLElement {
     transport.scheduleOnce(
       () => {
         if (this.#stopped) return;
-        this.#runLoop(nextCursor, selStart, selEnd, suppressNext);
+        this.#runLoop(nextCursor, measureSequence, suppressNext);
       },
       `${cursor + 1}i`,
     );
   }
 
-  #buildLoopIteration(cursor, selStart, selEnd, suppressEntryPickup) {
+  #buildLoopIteration(cursor, measureSequence, suppressEntryPickup) {
     const tune = this.#tune;
     const transport = Tone.getTransport();
 
-    for (let m = selStart; m <= selEnd; m += 1) {
+    measureSequence.forEach((m, i) => {
       const measure = tune.measures[m];
-      const isEntryMeasure = m === selStart;
+      const isEntryMeasure = i === 0;
 
       transport.scheduleOnce(() => {
         if (this.#stopped) return;
@@ -180,7 +201,7 @@ export class TuneLooper extends HTMLElement {
       } else {
         cursor += tune.ticksPerMeasure;
       }
-    }
+    });
 
     return cursor;
   }
@@ -207,6 +228,7 @@ export class TuneLooper extends HTMLElement {
       playing: this.#playing,
       selStart: this.#selStart,
       selEnd: this.#selEnd,
+      wholeTuneSelected: this.#wholeTuneSelected,
       bpm: this.#bpm,
       restBar: this.#restBar,
       metronome: this.#metronome,
@@ -217,6 +239,7 @@ export class TuneLooper extends HTMLElement {
   #onClick = (event) => {
     const cell = event.target.closest('[data-measure-index]');
     const part = event.target.closest('[data-part-index]');
+    const selectAll = event.target.closest('.tl-select-all');
     const playBtn = event.target.closest('.tl-play-btn');
     const hintToggle = event.target.closest('.tl-hint-toggle');
 
@@ -224,6 +247,8 @@ export class TuneLooper extends HTMLElement {
       this.#selectMeasure(Number(cell.dataset.measureIndex));
     } else if (part) {
       this.#selectPart(Number(part.dataset.partIndex));
+    } else if (selectAll) {
+      this.#selectAll();
     } else if (playBtn) {
       this.#playing ? this.stop() : this.play();
     } else if (hintToggle) {
@@ -249,6 +274,7 @@ export class TuneLooper extends HTMLElement {
   };
 
   #selectMeasure(measureIndex) {
+    this.#wholeTuneSelected = false;
     if (this.#selStart === null || this.#selEnd !== null) {
       this.#selStart = measureIndex;
       this.#selEnd = null;
@@ -262,9 +288,17 @@ export class TuneLooper extends HTMLElement {
   }
 
   #selectPart(partIndex) {
+    this.#wholeTuneSelected = false;
     const part = this.#tune.parts[partIndex];
     this.#selStart = part.startMeasure;
     this.#selEnd = part.startMeasure + part.bars - 1;
+    this.#render();
+  }
+
+  #selectAll() {
+    this.#selStart = 0;
+    this.#selEnd = this.#tune.measures.length - 1;
+    this.#wholeTuneSelected = true;
     this.#render();
   }
 
@@ -328,6 +362,9 @@ export class TuneLooper extends HTMLElement {
         <span class="tl-barcount">${totalBars} bars</span>
         <button type="button" class="tl-hint-toggle" aria-pressed="${this.#hintsVisible}">?</button>
         ${hintsHtml}
+      </div>
+      <div class="tl-select-all-row">
+        <button type="button" class="tl-select-all">Whole Tune</button>
       </div>
       <div class="tl-parts">
         ${pickupCellHtml}
