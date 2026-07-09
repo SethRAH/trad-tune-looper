@@ -43,8 +43,8 @@ produce a `NormalizedTune`. One `<tune-looper>` custom element
 - **`main.js`** — wires the above together: fetch manifest + per-tune
   metadata/MIDI, instantiate elements, call `initCoordinator(document)`.
 - **Tune content lives in `public/tunes/`**: `manifest.json` (session title
-  - tune id list), `{id}.json` (authored metadata), `{id}.mid` (MIDI source
-    of truth for notes/tempo/time-sig/measure count).
+  and tune id list), `{id}.json` (authored metadata), `{id}.mid` (MIDI
+  source of truth for notes/tempo/time-sig/measure count).
 
 ## Non-obvious rules (see PRD for full detail)
 
