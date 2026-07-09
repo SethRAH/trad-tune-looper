@@ -1,0 +1,17 @@
+{
+  "id": "the-black-rogue",
+  "title": "The Black Rogue",
+  "type": "jig",
+  "midi": "tunes/the-black-rogue.mid",
+  "timeSignatureOverride": [6, 8],
+  "pickupBeats": 1,
+
+  "parts": [
+    { "name": "A", "startMeasure": 1, "bars": 8, "repeats": 2 },
+    { "name": "B", "startMeasure": 9, "bars": 8, "repeats": 2 }
+  ],
+
+  "hints": {
+    "key": "G"
+  }
+}

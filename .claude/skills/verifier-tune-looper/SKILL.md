@@ -60,11 +60,26 @@ temporarily instead:
 
 1. In `tune-looper.js`, inside the scheduled callback(s) you suspect are
    dropping events, add a one-line guarded push, e.g.:
+
    ```js
    if (window.__trace) window.__trace.push(['note', cursor + note.offsetTicks]);
    ```
+
    Do this for whichever callback(s) are in question (note trigger,
    metronome click, or both).
+
+   **Closure-capture gotcha:** compute the tick into a `const` _before_
+   the scheduled callback and log that, don't read an outer `let` from
+   inside the deferred callback body. `#buildLoopIteration`'s `cursor` is
+   a mutable `let` that gets reassigned as the loop advances through
+   measures — a callback that captures it and reads `cursor` at fire time
+   (rather than at schedule time) will see the _final_ post-loop value
+   for every note in that iteration, not the value when it was scheduled.
+   `#scheduleMetronomeForMeasure`'s `tick` is a fresh `const` per
+   iteration of its loop, so it doesn't have this problem — mirror that
+   pattern (snapshot to a `const` right where the tick is computed, log
+   that) for any new trace point.
+
 2. In the Playwright driver, `await page.evaluate(() => { window.__trace = []; })`
    before clicking Play, then after your wait window read it back with
    `page.evaluate(() => window.__trace)`.

@@ -1,0 +1,15 @@
+{
+  "id": "the-legacy",
+  "title": "The Legacy",
+  "type": "jig",
+  "midi": "tunes/the-legacy.mid",
+
+  "parts": [
+    { "name": "A", "startMeasure": 1, "bars": 8, "repeats": 2 },
+    { "name": "B", "startMeasure": 9, "bars": 8, "repeats": 2 }
+  ],
+
+  "hints": {
+    "key": "G"
+  }
+}

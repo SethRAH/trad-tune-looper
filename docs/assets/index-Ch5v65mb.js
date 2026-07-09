@@ -13969,8 +13969,8 @@ function Tl() {
 (ec().destination, ec().destination, ec().listener, ec().draw, ec());
 var El = 40,
   Dl = 180;
-function Ol(e, t) {
-  return `flex-grow: ${e.bars / t}`;
+function Ol(e) {
+  return `flex: ${e.bars} 1 0`;
 }
 var kl = class extends HTMLElement {
   #e = null;
@@ -13985,10 +13985,9 @@ var kl = class extends HTMLElement {
   #l = null;
   #u = null;
   #d = null;
-  #f = [];
-  #p = !0;
+  #f = !0;
   set tune(e) {
-    (this.#m(),
+    (this.#p(),
       (this.#r = !1),
       (this.#l = null),
       (this.#e = e),
@@ -13996,52 +13995,51 @@ var kl = class extends HTMLElement {
       (this.#t = null),
       (this.#n = null),
       (this.#c = !1),
-      this.#w());
+      this.#C());
   }
   get tune() {
     return this.#e;
   }
   connectedCallback() {
-    (this.addEventListener(`click`, this.#y),
-      this.addEventListener(`input`, this.#b),
-      this.#w());
+    (this.addEventListener(`click`, this.#v),
+      this.addEventListener(`input`, this.#y),
+      this.#C());
   }
   disconnectedCallback() {
-    (this.removeEventListener(`click`, this.#y),
-      this.removeEventListener(`input`, this.#b),
-      this.#m());
+    (this.removeEventListener(`click`, this.#v),
+      this.removeEventListener(`input`, this.#y),
+      this.#p());
   }
   play() {
-    (this.#m(),
+    (this.#p(),
       (this.#r = !0),
-      (this.#p = !1),
+      (this.#f = !1),
       this.dispatchEvent(
         new CustomEvent(`tune-play`, { bubbles: !0, detail: { id: this.#e.id } }),
       ),
-      this.#w(),
+      this.#C(),
       nc().then(() => {
-        this.#p || this.#h();
+        this.#f || this.#m();
       }));
   }
   stop() {
-    (this.#m(),
+    (this.#p(),
       (this.#r = !1),
       (this.#l = null),
       this.dispatchEvent(
         new CustomEvent(`tune-stop`, { bubbles: !0, detail: { id: this.#e.id } }),
       ),
-      this.#w());
+      this.#C());
   }
-  #m() {
-    this.#p = !0;
+  #p() {
+    this.#f = !0;
     let e = Tl();
     (e.stop(),
       e.cancel(0),
-      (this.#f = []),
       (this.#u &&= (this.#u.dispose(), null)),
       (this.#d &&= (this.#d.dispose(), null)));
   }
-  #h() {
+  #m() {
     let e = this.#e,
       t = Tl();
     ((t.PPQ = e.ppq),
@@ -14051,56 +14049,54 @@ var kl = class extends HTMLElement {
     let n = this.#t ?? 0,
       r = this.#n ?? e.measures.length - 1,
       i = 0;
-    (this.#s && (i = this.#v(i, !0)), this.#g(i, n, r, !0), t.start());
+    (this.#s && (i = this.#_(i, !0)), this.#h(i, n, r, !0), t.start());
+  }
+  #h(e, t, n, r) {
+    let i = this.#g(e, t, n, r),
+      a = i;
+    this.#a && (a = this.#_(i, !1));
+    let o = this.#a;
+    Tl().scheduleOnce(
+      () => {
+        this.#f || this.#h(a, t, n, o);
+      },
+      `${e + 1}i`,
+    );
   }
   #g(e, t, n, r) {
-    let i = this.#_(e, t, n, r),
-      a = i;
-    this.#a && (a = this.#v(i, !1));
-    let o = this.#a,
-      s = Tl().scheduleOnce(() => {
-        this.#p || this.#g(a, t, n, o);
-      }, `${i}i`);
-    this.#f.push(s);
-  }
-  #_(e, t, n, r) {
     let i = this.#e,
       a = Tl();
     for (let o = t; o <= n; o += 1) {
       let n = i.measures[o],
-        s = o === t,
-        c = a.scheduleOnce(() => {
-          this.#p || ((this.#l = o), this.#w());
-        }, `${e}i`);
-      this.#f.push(c);
-      for (let t of n.notes) {
-        if (t.isPickup && s && r) continue;
-        let n = a.scheduleOnce(
-          (e) => {
-            if (this.#p) return;
-            let n = _c(t.midi, `midi`).toFrequency(),
-              r = a.toSeconds(`${t.durTicks}i`);
-            this.#u.triggerAttackRelease(n, r, e);
-          },
-          `${e + t.offsetTicks}i`,
-        );
-        this.#f.push(n);
-      }
-      this.#o ? (e = this.#v(e, !1)) : (e += i.ticksPerMeasure);
+        s = o === t;
+      a.scheduleOnce(() => {
+        this.#f || ((this.#l = o), this.#C());
+      }, `${e}i`);
+      for (let t of n.notes)
+        (t.isPickup && s && r) ||
+          a.scheduleOnce(
+            (e) => {
+              if (this.#f) return;
+              let n = _c(t.midi, `midi`).toFrequency(),
+                r = a.toSeconds(`${t.durTicks}i`);
+              this.#u.triggerAttackRelease(n, r, e);
+            },
+            `${e + t.offsetTicks}i`,
+          );
+      this.#o ? (e = this.#_(e, !1)) : (e += i.ticksPerMeasure);
     }
     return e;
   }
-  #v(e, t) {
+  #_(e, t) {
     let n = this.#e,
       r = Tl();
     for (let i = 0; i < n.tsNum; i += 1) {
-      let a = e + i * n.ticksPerBeat,
-        o = r.scheduleOnce((e) => {
-          if (this.#p || (!t && !this.#o)) return;
-          let n = i === 0 ? `C3` : `C2`;
-          this.#d.triggerAttackRelease(n, `32n`, e);
-        }, `${a}i`);
-      this.#f.push(o);
+      let a = e + i * n.ticksPerBeat;
+      r.scheduleOnce((e) => {
+        if (this.#f || (!t && !this.#o)) return;
+        let n = i === 0 ? `C3` : `C2`;
+        this.#d.triggerAttackRelease(n, `32n`, e);
+      }, `${a}i`);
     }
     return e + n.ticksPerMeasure;
   }
@@ -14115,43 +14111,43 @@ var kl = class extends HTMLElement {
       countIn: this.#s,
     };
   }
-  #y = (e) => {
+  #v = (e) => {
     let t = e.target.closest(`[data-measure-index]`),
       n = e.target.closest(`[data-part-index]`),
       r = e.target.closest(`.tl-play-btn`),
       i = e.target.closest(`.tl-hint-toggle`);
     t
-      ? this.#x(Number(t.dataset.measureIndex))
+      ? this.#b(Number(t.dataset.measureIndex))
       : n
-        ? this.#S(Number(n.dataset.partIndex))
+        ? this.#x(Number(n.dataset.partIndex))
         : r
           ? this.#r
             ? this.stop()
             : this.play()
-          : i && ((this.#c = !this.#c), this.#w());
+          : i && ((this.#c = !this.#c), this.#C());
   };
-  #b = (e) => {
+  #y = (e) => {
     e.target.matches(`.tl-tempo-slider`)
       ? ((this.#i = Number(e.target.value)),
         this.#r && (Tl().bpm.value = this.#i),
-        this.#w())
+        this.#C())
       : e.target.matches(`.tl-rest-bar-toggle`)
         ? (this.#a = e.target.checked)
         : e.target.matches(`.tl-metronome-toggle`)
           ? (this.#o = e.target.checked)
           : e.target.matches(`.tl-count-in-toggle`) && (this.#s = e.target.checked);
   };
-  #x(e) {
+  #b(e) {
     (this.#t === null || this.#n !== null
       ? ((this.#t = e), (this.#n = null))
       : ((this.#n = e), this.#n < this.#t && ([this.#t, this.#n] = [this.#n, this.#t])),
-      this.#w());
+      this.#C());
+  }
+  #x(e) {
+    let t = this.#e.parts[e];
+    ((this.#t = t.startMeasure), (this.#n = t.startMeasure + t.bars - 1), this.#C());
   }
   #S(e) {
-    let t = this.#e.parts[e];
-    ((this.#t = t.startMeasure), (this.#n = t.startMeasure + t.bars - 1), this.#w());
-  }
-  #C(e) {
     return this.#t === null
       ? ``
       : this.#n === null
@@ -14162,18 +14158,21 @@ var kl = class extends HTMLElement {
           ? `tl-cell--selected`
           : ``;
   }
-  #w() {
+  #C() {
     let e = this.#e;
     if (!e) {
       this.innerHTML = ``;
       return;
     }
     let t = e.parts.reduce((e, t) => e + t.bars, 0),
-      n = e.downbeatTick > 0,
+      n =
+        e.downbeatTick > 0
+          ? `<span class="tl-cell tl-cell--pickup" aria-hidden="true"></span>`
+          : ``,
       r = e.parts
         .map(
-          (e, n) => `
-          <button type="button" class="tl-part" data-part-index="${n}" style="${Ol(e, t)}">
+          (e, t) => `
+          <button type="button" class="tl-part" data-part-index="${t}" style="${Ol(e)}">
             ${e.name}
           </button>`,
         )
@@ -14182,7 +14181,7 @@ var kl = class extends HTMLElement {
         .map((e) => {
           let t = e.index === this.#l ? `tl-cell--current` : ``;
           return `
-          <button type="button" class="tl-cell ${this.#C(e.index)} ${t}"
+          <button type="button" class="tl-cell ${this.#S(e.index)} ${t}"
                   data-measure-index="${e.index}">
             ${e.index + 1}
           </button>`;
@@ -14203,9 +14202,12 @@ var kl = class extends HTMLElement {
         <button type="button" class="tl-hint-toggle" aria-pressed="${this.#c}">?</button>
         ${a}
       </div>
-      <div class="tl-parts">${r}</div>
+      <div class="tl-parts">
+        ${n}
+        ${r}
+      </div>
       <div class="tl-grid">
-        ${n ? `<span class="tl-cell tl-cell--pickup" aria-hidden="true"></span>` : ``}
+        ${n}
         ${i}
       </div>
       <div class="tl-transport">
