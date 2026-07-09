@@ -43,8 +43,8 @@ function makeTune() {
     practiceTempo: 90,
     measures: [0, 1, 2, 3].map((index) => ({ index, notes: [] })),
     parts: [
-      { name: 'A', startMeasure: 0, bars: 2 },
-      { name: 'B', startMeasure: 2, bars: 2 },
+      { name: 'A', startMeasure: 0, bars: 2, repeats: 2 },
+      { name: 'B', startMeasure: 2, bars: 2, repeats: 3 },
     ],
     hints: { key: 'G', startingNote: 'D' },
   };
@@ -125,6 +125,18 @@ describe('<tune-looper>', () => {
     expect(state.selStart).toBe(0);
     expect(state.selEnd).toBe(3);
     expect(state.wholeTuneSelected).toBe(true);
+  });
+
+  it('shows the flat bar count normally, and the repeats-expanded count once whole tune is selected', () => {
+    expect(el.querySelector('.tl-barcount').textContent.trim()).toBe('4 bars');
+
+    el.querySelector('.tl-select-all').click();
+    expect(el.querySelector('.tl-barcount').textContent.trim()).toBe(
+      '10 bars with repeats',
+    );
+
+    el.querySelector('[data-part-index="0"]').click();
+    expect(el.querySelector('.tl-barcount').textContent.trim()).toBe('4 bars');
   });
 
   it('drops out of whole-tune mode when a measure or part is selected afterward', () => {

@@ -172,7 +172,10 @@ the MIDI and are **never** duplicated here (two sources of truth drift).
   // startMeasure: 1-based; first FULL bar is 1 (pickup notes live in bar 0 / index -1)
   // bars:    unique bars in the part (NOT counting written repeats) — this is the
   //          selectable unit; the looper handles repetition
-  // repeats: as-written repeat count. Informational/display only.
+  // repeats: as-written repeat count. Display-only for a part/manual-range
+  //          selection (which always plays a flat single pass) — but drives
+  //          actual playback order for the whole-tune selection (§7.1), which
+  //          expands each part by its repeats count (e.g. A A B B).
 
   "hints": {
     "key": "G", // shown only when the hint toggle is on.
@@ -288,6 +291,10 @@ attribute — it's an object). Renders its own UI and owns its playback.
   (icon/ghost button). When on, reveals key + "starts on {note}". Off by default.
 - **Part bar:** a row of labeled segments (Part A, Part B) sized proportionally to
   their bar counts. Clicking a segment selects that whole part.
+- **Whole Tune button:** selects every measure in the tune. Unlike a part or manual
+  range selection (a flat single pass), this expands each part by its authored
+  `repeats` count during playback (§7.2), so the tune plays out as written (e.g.
+  A A B B) instead of once straight through.
 - **Measure grid:** a row of numbered cells (bar 1..N). If there's a bar-1 pickup,
   render a narrow lead-in cell before bar 1 (visually distinct, not separately
   selectable — it follows the pickup rule). Click a cell to set the selection start
@@ -310,6 +317,12 @@ Follow the ear-first principle: the structural grid is scaffolding and is good; 
 - Build the loop body from the selected measures, honoring the **pickup rule** (§4)
   at the seam into the first selected measure and — when rest bar is on — inserting
   one empty bar and suppressing the pickup after it.
+- **Whole Tune selection:** the loop body is each part's measures repeated by its
+  `repeats` count, concatenated in part order (e.g. A A B B), not a flat single
+  pass over every measure once. Every other selection (a part, or a manual range)
+  keeps the flat single-pass behavior. The pickup rule still only suppresses the
+  very first note of the loop body — internal part-repeat and part-to-part seams
+  are reached "out of music" and play their pickups normally.
 - **Count-in:** one bar of metronome before the _first_ iteration only (distinct from
   the between-loops rest bar — different need, don't conflate).
 - **Metronome during a rest bar:** click through it (keeps you oriented; staying in

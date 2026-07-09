@@ -30,9 +30,7 @@ export class TuneLooper extends HTMLElement {
     this.#currentMeasure = null;
     this.#tune = value;
     this.#bpm = value.practiceTempo;
-    this.#selStart = null;
-    this.#selEnd = null;
-    this.#wholeTuneSelected = false;
+    this.#setSelection(null, null, false);
     this.#hintsVisible = false;
     this.#render();
   }
@@ -273,32 +271,31 @@ export class TuneLooper extends HTMLElement {
     }
   };
 
+  #setSelection(selStart, selEnd, wholeTuneSelected) {
+    this.#selStart = selStart;
+    this.#selEnd = selEnd;
+    this.#wholeTuneSelected = wholeTuneSelected;
+  }
+
   #selectMeasure(measureIndex) {
-    this.#wholeTuneSelected = false;
     if (this.#selStart === null || this.#selEnd !== null) {
-      this.#selStart = measureIndex;
-      this.#selEnd = null;
+      this.#setSelection(measureIndex, null, false);
     } else {
-      this.#selEnd = measureIndex;
-      if (this.#selEnd < this.#selStart) {
-        [this.#selStart, this.#selEnd] = [this.#selEnd, this.#selStart];
-      }
+      let [start, end] = [this.#selStart, measureIndex];
+      if (end < start) [start, end] = [end, start];
+      this.#setSelection(start, end, false);
     }
     this.#render();
   }
 
   #selectPart(partIndex) {
-    this.#wholeTuneSelected = false;
     const part = this.#tune.parts[partIndex];
-    this.#selStart = part.startMeasure;
-    this.#selEnd = part.startMeasure + part.bars - 1;
+    this.#setSelection(part.startMeasure, part.startMeasure + part.bars - 1, false);
     this.#render();
   }
 
   #selectAll() {
-    this.#selStart = 0;
-    this.#selEnd = this.#tune.measures.length - 1;
-    this.#wholeTuneSelected = true;
+    this.#setSelection(0, this.#tune.measures.length - 1, true);
     this.#render();
   }
 
@@ -321,6 +318,9 @@ export class TuneLooper extends HTMLElement {
     }
 
     const totalBars = tune.parts.reduce((sum, part) => sum + part.bars, 0);
+    const barCountLabel = this.#wholeTuneSelected
+      ? `${tune.parts.reduce((sum, part) => sum + part.bars * (part.repeats ?? 1), 0)} bars with repeats`
+      : `${totalBars} bars`;
     const hasBarOnePickup = tune.downbeatTick > 0;
     const pickupCellHtml = hasBarOnePickup
       ? '<span class="tl-cell tl-cell--pickup" aria-hidden="true"></span>'
@@ -359,7 +359,7 @@ export class TuneLooper extends HTMLElement {
         <span class="tl-title">${tune.title}</span>
         <span class="tl-type">${tune.type}</span>
         <span class="tl-timesig">${tune.tsNum}/${tune.tsDen}</span>
-        <span class="tl-barcount">${totalBars} bars</span>
+        <span class="tl-barcount">${barCountLabel}</span>
         <button type="button" class="tl-hint-toggle" aria-pressed="${this.#hintsVisible}">?</button>
         ${hintsHtml}
       </div>
