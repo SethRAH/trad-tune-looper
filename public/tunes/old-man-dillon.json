@@ -1,10 +1,8 @@
 {
-  "id": "the-black-rogue",
-  "title": "The Black Rogue",
+  "id": "old-man-dillon",
+  "title": "Old Man Dillon",
   "type": "jig",
-  "midi": "tunes/the-black-rogue.mid",
-  "timeSignatureOverride": [6, 8],
-  "pickupBeats": 1,
+  "midi": "tunes/old-man-dillon.mid",
 
   "parts": [
     { "name": "A", "startMeasure": 1, "bars": 8, "repeats": 2 },
@@ -12,6 +10,6 @@
   ],
 
   "hints": {
-    "key": "D"
+    "key": "G"
   }
 }

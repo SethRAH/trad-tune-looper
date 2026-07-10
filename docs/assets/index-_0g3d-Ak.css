@@ -109,6 +109,21 @@ tune-looper {
   font-style: italic;
   display: flex;
 }
+.tl-select-all-row {
+  margin-bottom: var(--space-2);
+}
+.tl-select-all {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: inherit;
+}
+.tl-select-all:hover {
+  border-color: var(--accent);
+}
 .tl-parts {
   margin-bottom: var(--space-2);
   gap: 2px;

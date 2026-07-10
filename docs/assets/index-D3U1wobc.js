@@ -13977,177 +13977,206 @@ var kl = class extends HTMLElement {
   #t = null;
   #n = null;
   #r = !1;
-  #i = null;
-  #a = !1;
+  #i = !1;
+  #a = null;
   #o = !1;
-  #s = !0;
-  #c = !1;
-  #l = null;
+  #s = !1;
+  #c = !0;
+  #l = !1;
   #u = null;
   #d = null;
-  #f = !0;
+  #f = null;
+  #p = !0;
   set tune(e) {
-    (this.#p(),
-      (this.#r = !1),
-      (this.#l = null),
+    (this.#m(),
+      (this.#i = !1),
+      (this.#u = null),
       (this.#e = e),
-      (this.#i = e.practiceTempo),
+      (this.#a = e.practiceTempo),
       (this.#t = null),
       (this.#n = null),
-      (this.#c = !1),
-      this.#C());
+      (this.#r = !1),
+      (this.#l = !1),
+      this.#E());
   }
   get tune() {
     return this.#e;
   }
   connectedCallback() {
-    (this.addEventListener(`click`, this.#v),
-      this.addEventListener(`input`, this.#y),
-      this.#C());
+    (this.addEventListener(`click`, this.#b),
+      this.addEventListener(`input`, this.#x),
+      this.#E());
   }
   disconnectedCallback() {
-    (this.removeEventListener(`click`, this.#v),
-      this.removeEventListener(`input`, this.#y),
-      this.#p());
+    (this.removeEventListener(`click`, this.#b),
+      this.removeEventListener(`input`, this.#x),
+      this.#m());
   }
   play() {
-    (this.#p(),
-      (this.#r = !0),
-      (this.#f = !1),
+    (this.#m(),
+      (this.#i = !0),
+      (this.#p = !1),
       this.dispatchEvent(
         new CustomEvent(`tune-play`, { bubbles: !0, detail: { id: this.#e.id } }),
       ),
-      this.#C(),
+      this.#E(),
       nc().then(() => {
-        this.#f || this.#m();
+        this.#p || this.#h();
       }));
   }
   stop() {
-    (this.#p(),
-      (this.#r = !1),
-      (this.#l = null),
+    (this.#m(),
+      (this.#i = !1),
+      (this.#u = null),
       this.dispatchEvent(
         new CustomEvent(`tune-stop`, { bubbles: !0, detail: { id: this.#e.id } }),
       ),
-      this.#C());
+      this.#E());
   }
-  #p() {
-    this.#f = !0;
+  #m() {
+    this.#p = !0;
     let e = Tl();
     (e.stop(),
       e.cancel(0),
-      (this.#u &&= (this.#u.dispose(), null)),
-      (this.#d &&= (this.#d.dispose(), null)));
+      (this.#d &&= (this.#d.dispose(), null)),
+      (this.#f &&= (this.#f.dispose(), null)));
   }
-  #m() {
+  #h() {
     let e = this.#e,
       t = Tl();
     ((t.PPQ = e.ppq),
-      (t.bpm.value = this.#i),
-      (this.#u = new hl().toDestination()),
-      (this.#d = new gl().toDestination()));
+      (t.bpm.value = this.#a),
+      (this.#d = new hl().toDestination()),
+      (this.#f = new gl().toDestination()));
     let n = this.#t ?? 0,
       r = this.#n ?? e.measures.length - 1,
-      i = 0;
-    (this.#s && (i = this.#_(i, !0)), this.#h(i, n, r, !0), t.start());
+      i = this.#g(n, r),
+      a = 0;
+    (this.#c && (a = this.#y(a, !0)), this.#_(a, i, !0), t.start());
   }
-  #h(e, t, n, r) {
-    let i = this.#g(e, t, n, r),
-      a = i;
-    this.#a && (a = this.#_(i, !1));
-    let o = this.#a;
+  #g(e, t) {
+    if (!this.#r) {
+      let n = [];
+      for (let r = e; r <= t; r += 1) n.push(r);
+      return n;
+    }
+    let n = [];
+    for (let e of this.#e.parts) {
+      let t = [];
+      for (let n = e.startMeasure; n < e.startMeasure + e.bars; n += 1) t.push(n);
+      let r = e.repeats ?? 1;
+      for (let e = 0; e < r; e += 1) n.push(...t);
+    }
+    return n;
+  }
+  #_(e, t, n) {
+    let r = this.#v(e, t, n),
+      i = r;
+    this.#o && (i = this.#y(r, !1));
+    let a = this.#o;
     Tl().scheduleOnce(
       () => {
-        this.#f || this.#h(a, t, n, o);
+        this.#p || this.#_(i, t, a);
       },
       `${e + 1}i`,
     );
   }
-  #g(e, t, n, r) {
-    let i = this.#e,
-      a = Tl();
-    for (let o = t; o <= n; o += 1) {
-      let n = i.measures[o],
-        s = o === t;
-      a.scheduleOnce(() => {
-        this.#f || ((this.#l = o), this.#C());
-      }, `${e}i`);
-      for (let t of n.notes)
-        (t.isPickup && s && r) ||
-          a.scheduleOnce(
-            (e) => {
-              if (this.#f) return;
-              let n = _c(t.midi, `midi`).toFrequency(),
-                r = a.toSeconds(`${t.durTicks}i`);
-              this.#u.triggerAttackRelease(n, r, e);
-            },
-            `${e + t.offsetTicks}i`,
-          );
-      this.#o ? (e = this.#_(e, !1)) : (e += i.ticksPerMeasure);
-    }
-    return e;
+  #v(e, t, n) {
+    let r = this.#e,
+      i = Tl();
+    return (
+      t.forEach((t, a) => {
+        let o = r.measures[t],
+          s = a === 0;
+        i.scheduleOnce(() => {
+          this.#p || ((this.#u = t), this.#E());
+        }, `${e}i`);
+        for (let t of o.notes)
+          (t.isPickup && s && n) ||
+            i.scheduleOnce(
+              (e) => {
+                if (this.#p) return;
+                let n = _c(t.midi, `midi`).toFrequency(),
+                  r = i.toSeconds(`${t.durTicks}i`);
+                this.#d.triggerAttackRelease(n, r, e);
+              },
+              `${e + t.offsetTicks}i`,
+            );
+        this.#s ? (e = this.#y(e, !1)) : (e += r.ticksPerMeasure);
+      }),
+      e
+    );
   }
-  #_(e, t) {
+  #y(e, t) {
     let n = this.#e,
       r = Tl();
     for (let i = 0; i < n.tsNum; i += 1) {
       let a = e + i * n.ticksPerBeat;
       r.scheduleOnce((e) => {
-        if (this.#f || (!t && !this.#o)) return;
+        if (this.#p || (!t && !this.#s)) return;
         let n = i === 0 ? `C3` : `C2`;
-        this.#d.triggerAttackRelease(n, `32n`, e);
+        this.#f.triggerAttackRelease(n, `32n`, e);
       }, `${a}i`);
     }
     return e + n.ticksPerMeasure;
   }
   getState() {
     return {
-      playing: this.#r,
+      playing: this.#i,
       selStart: this.#t,
       selEnd: this.#n,
-      bpm: this.#i,
-      restBar: this.#a,
-      metronome: this.#o,
-      countIn: this.#s,
+      wholeTuneSelected: this.#r,
+      bpm: this.#a,
+      restBar: this.#o,
+      metronome: this.#s,
+      countIn: this.#c,
     };
   }
-  #v = (e) => {
+  #b = (e) => {
     let t = e.target.closest(`[data-measure-index]`),
       n = e.target.closest(`[data-part-index]`),
-      r = e.target.closest(`.tl-play-btn`),
-      i = e.target.closest(`.tl-hint-toggle`);
+      r = e.target.closest(`.tl-select-all`),
+      i = e.target.closest(`.tl-play-btn`),
+      a = e.target.closest(`.tl-hint-toggle`);
     t
-      ? this.#b(Number(t.dataset.measureIndex))
+      ? this.#S(Number(t.dataset.measureIndex))
       : n
-        ? this.#x(Number(n.dataset.partIndex))
+        ? this.#C(Number(n.dataset.partIndex))
         : r
-          ? this.#r
-            ? this.stop()
-            : this.play()
-          : i && ((this.#c = !this.#c), this.#C());
+          ? this.#w()
+          : i
+            ? this.#i
+              ? this.stop()
+              : this.play()
+            : a && ((this.#l = !this.#l), this.#E());
   };
-  #y = (e) => {
+  #x = (e) => {
     e.target.matches(`.tl-tempo-slider`)
-      ? ((this.#i = Number(e.target.value)),
-        this.#r && (Tl().bpm.value = this.#i),
-        this.#C())
+      ? ((this.#a = Number(e.target.value)),
+        this.#i && (Tl().bpm.value = this.#a),
+        this.#E())
       : e.target.matches(`.tl-rest-bar-toggle`)
-        ? (this.#a = e.target.checked)
+        ? (this.#o = e.target.checked)
         : e.target.matches(`.tl-metronome-toggle`)
-          ? (this.#o = e.target.checked)
-          : e.target.matches(`.tl-count-in-toggle`) && (this.#s = e.target.checked);
+          ? (this.#s = e.target.checked)
+          : e.target.matches(`.tl-count-in-toggle`) && (this.#c = e.target.checked);
   };
-  #b(e) {
-    (this.#t === null || this.#n !== null
-      ? ((this.#t = e), (this.#n = null))
-      : ((this.#n = e), this.#n < this.#t && ([this.#t, this.#n] = [this.#n, this.#t])),
-      this.#C());
-  }
-  #x(e) {
-    let t = this.#e.parts[e];
-    ((this.#t = t.startMeasure), (this.#n = t.startMeasure + t.bars - 1), this.#C());
-  }
   #S(e) {
+    ((this.#r = !1),
+      this.#t === null || this.#n !== null
+        ? ((this.#t = e), (this.#n = null))
+        : ((this.#n = e), this.#n < this.#t && ([this.#t, this.#n] = [this.#n, this.#t])),
+      this.#E());
+  }
+  #C(e) {
+    this.#r = !1;
+    let t = this.#e.parts[e];
+    ((this.#t = t.startMeasure), (this.#n = t.startMeasure + t.bars - 1), this.#E());
+  }
+  #w() {
+    ((this.#t = 0), (this.#n = this.#e.measures.length - 1), (this.#r = !0), this.#E());
+  }
+  #T(e) {
     return this.#t === null
       ? ``
       : this.#n === null
@@ -14158,7 +14187,7 @@ var kl = class extends HTMLElement {
           ? `tl-cell--selected`
           : ``;
   }
-  #C() {
+  #E() {
     let e = this.#e;
     if (!e) {
       this.innerHTML = ``;
@@ -14179,15 +14208,15 @@ var kl = class extends HTMLElement {
         .join(``),
       i = e.measures
         .map((e) => {
-          let t = e.index === this.#l ? `tl-cell--current` : ``;
+          let t = e.index === this.#u ? `tl-cell--current` : ``;
           return `
-          <button type="button" class="tl-cell ${this.#S(e.index)} ${t}"
+          <button type="button" class="tl-cell ${this.#T(e.index)} ${t}"
                   data-measure-index="${e.index}">
             ${e.index + 1}
           </button>`;
         })
         .join(``),
-      a = this.#c
+      a = this.#l
         ? `<div class="tl-hints">
            ${e.hints.key ? `<span class="tl-hint-key">Key: ${e.hints.key}</span>` : ``}
            ${e.hints.startingNote ? `<span class="tl-hint-start">Starts on ${e.hints.startingNote}</span>` : ``}
@@ -14199,8 +14228,11 @@ var kl = class extends HTMLElement {
         <span class="tl-type">${e.type}</span>
         <span class="tl-timesig">${e.tsNum}/${e.tsDen}</span>
         <span class="tl-barcount">${t} bars</span>
-        <button type="button" class="tl-hint-toggle" aria-pressed="${this.#c}">?</button>
+        <button type="button" class="tl-hint-toggle" aria-pressed="${this.#l}">?</button>
         ${a}
+      </div>
+      <div class="tl-select-all-row">
+        <button type="button" class="tl-select-all">Whole Tune</button>
       </div>
       <div class="tl-parts">
         ${n}
@@ -14211,14 +14243,14 @@ var kl = class extends HTMLElement {
         ${i}
       </div>
       <div class="tl-transport">
-        <button type="button" class="tl-play-btn">${this.#r ? `Stop` : `Play`}</button>
-        <input type="range" class="tl-tempo-slider" min="${El}" max="${Dl}" value="${this.#i}" />
-        <span class="tl-tempo-readout">${this.#i} bpm</span>
+        <button type="button" class="tl-play-btn">${this.#i ? `Stop` : `Play`}</button>
+        <input type="range" class="tl-tempo-slider" min="${El}" max="${Dl}" value="${this.#a}" />
+        <span class="tl-tempo-readout">${this.#a} bpm</span>
       </div>
       <div class="tl-toggles">
-        <label><input type="checkbox" class="tl-rest-bar-toggle" ${this.#a ? `checked` : ``} /> Rest bar</label>
-        <label><input type="checkbox" class="tl-metronome-toggle" ${this.#o ? `checked` : ``} /> Metronome</label>
-        <label><input type="checkbox" class="tl-count-in-toggle" ${this.#s ? `checked` : ``} /> Count-in</label>
+        <label><input type="checkbox" class="tl-rest-bar-toggle" ${this.#o ? `checked` : ``} /> Rest bar</label>
+        <label><input type="checkbox" class="tl-metronome-toggle" ${this.#s ? `checked` : ``} /> Metronome</label>
+        <label><input type="checkbox" class="tl-count-in-toggle" ${this.#c ? `checked` : ``} /> Count-in</label>
       </div>
     `;
   }
