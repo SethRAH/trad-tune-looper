@@ -508,12 +508,20 @@ export class TuneLooper extends HTMLElement {
       return classification.endingIndex;
     };
 
+    // As-played bar numbers run once, continuously, across the whole tune —
+    // not the raw score index (which double-counts whichever ending isn't
+    // showing) and not a per-ending-row-local count (which would restart at
+    // 1 for every ending row). Both endings of a part share the same
+    // number(s), since they're alternatives at the same as-played slot.
+    let displayCounter = 1;
+
     const gridHtml = tune.parts
       .map((part) => {
         if (!part.endings) {
           const cells = [];
           for (let m = part.startMeasure; m < part.startMeasure + part.bars; m += 1) {
-            cells.push(renderCell(m, m + 1));
+            cells.push(renderCell(m, displayCounter));
+            displayCounter += 1;
           }
           return cells.join('');
         }
@@ -526,13 +534,24 @@ export class TuneLooper extends HTMLElement {
               ? 'tl-ending-row--live'
               : 'tl-ending-row--dim';
 
-        const bodyCellsHtml = part.bodyMeasures.map((m) => renderCell(m, m + 1)).join('');
+        const bodyCellsHtml = part.bodyMeasures
+          .map((m) => {
+            const html = renderCell(m, displayCounter);
+            displayCounter += 1;
+            return html;
+          })
+          .join('');
+
+        const endingsStartLabel = displayCounter;
         const endingsWidth = Math.max(...part.endings.map((e) => e.bars));
         const endingRowsHtml = part.endings
           .map((ending, endingIdx) => {
             const cellsHtml = ending.measures
               .map((m, i) =>
-                renderCell(m, i + 1, { endingRole: endingIdx + 1, isFirst: i === 0 }),
+                renderCell(m, endingsStartLabel + i, {
+                  endingRole: endingIdx + 1,
+                  isFirst: i === 0,
+                }),
               )
               .join('');
             return `
@@ -541,6 +560,7 @@ export class TuneLooper extends HTMLElement {
               </div>`;
           })
           .join('');
+        displayCounter = endingsStartLabel + endingsWidth;
 
         return `
           <div class="tl-part-frame" style="flex: ${part.bodyBars + endingsWidth} 1 0">

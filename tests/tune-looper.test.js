@@ -179,14 +179,21 @@ describe('<tune-looper> voltas', () => {
     expect(aCell.closest('.tl-part-frame')).toBeNull();
   });
 
-  it('labels ending cells and grid cells by as-played position, not raw score index', () => {
+  it('labels cells by a running as-played position, with both endings sharing the same number', () => {
+    // A has 2 bars, B's body has 2 more -> B's body bars read 3, 4.
     const bodyCell = el.querySelector('.tl-part-body [data-measure-index="2"]');
-    expect(bodyCell.textContent.trim()).toBe('3'); // absolute score position, like a plain part
+    expect(bodyCell.textContent.trim()).toBe('3');
+    expect(
+      el.querySelector('.tl-part-body [data-measure-index="3"]').textContent.trim(),
+    ).toBe('4');
 
+    // Both 1-bar endings occupy the same as-played slot right after the
+    // body (5), not their own restarted 1-based count and not their
+    // differing raw score indices (4 and 5).
     const ending1Cell = el.querySelector('[data-measure-index="4"]');
     const ending2Cell = el.querySelector('[data-measure-index="5"]');
-    expect(ending1Cell.textContent.trim()).toContain('1');
-    expect(ending2Cell.textContent.trim()).toContain('1');
+    expect(ending1Cell.textContent.trim()).toContain('5');
+    expect(ending2Cell.textContent.trim()).toContain('5');
     expect(ending1Cell.dataset.endingRole).toBe('1');
     expect(ending2Cell.dataset.endingRole).toBe('2');
   });
@@ -218,6 +225,83 @@ describe('<tune-looper> voltas', () => {
     expect(el.querySelector('[data-measure-index="4"]').className).toContain(
       'tl-cell--selected',
     );
+  });
+
+  it('continues as-played numbering seamlessly across two volta parts (The Black Rogue shape)', () => {
+    // A: 7 body bars + two 1-bar endings. B: 7 body bars + two 1-bar
+    // endings. Score-order indices run 0..17 (9 for A, 9 for B), but the
+    // as-played numbering a musician reads off the grid should look like
+    // "1 2 3 4 5 6 7 8 8 9 10 11 12 13 14 15 16 16" — never jumping ahead
+    // to account for score bars that aren't actually shown (e.g. B's body
+    // must never read starting at 10 just because its raw score index is 9).
+    const tune = {
+      id: 'black-rogue-shape',
+      title: 'Black Rogue Shape',
+      type: 'jig',
+      tsNum: 6,
+      tsDen: 8,
+      ppq: 480,
+      ticksPerBeat: 240,
+      ticksPerMeasure: 1440,
+      downbeatTick: 0,
+      practiceTempo: 90,
+      measures: Array.from({ length: 18 }, (_, index) => ({ index, notes: [] })),
+      parts: [
+        {
+          name: 'A',
+          startMeasure: 0,
+          bodyBars: 7,
+          bodyMeasures: [0, 1, 2, 3, 4, 5, 6],
+          endings: [
+            { bars: 1, measures: [7] },
+            { bars: 1, measures: [8] },
+          ],
+          repeats: 2,
+        },
+        {
+          name: 'B',
+          startMeasure: 9,
+          bodyBars: 7,
+          bodyMeasures: [9, 10, 11, 12, 13, 14, 15],
+          endings: [
+            { bars: 1, measures: [16] },
+            { bars: 1, measures: [17] },
+          ],
+          repeats: 2,
+        },
+      ],
+      hints: { key: 'D' },
+    };
+
+    el.tune = tune;
+
+    const labelFor = (measureIndex) =>
+      el.querySelector(`[data-measure-index="${measureIndex}"]`).textContent.trim();
+
+    expect([0, 1, 2, 3, 4, 5, 6].map(labelFor)).toEqual([
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+    ]);
+    // Ending cells carry a "1st"/"2nd" bracket-label prefix, so check the
+    // as-played number is present rather than an exact match.
+    expect(labelFor(7)).toContain('8');
+    expect(labelFor(8)).toContain('8');
+    expect([9, 10, 11, 12, 13, 14, 15].map(labelFor)).toEqual([
+      '9',
+      '10',
+      '11',
+      '12',
+      '13',
+      '14',
+      '15',
+    ]);
+    expect(labelFor(16)).toContain('16');
+    expect(labelFor(17)).toContain('16');
   });
 });
 
