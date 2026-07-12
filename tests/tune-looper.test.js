@@ -120,10 +120,26 @@ describe('<tune-looper> voltas', () => {
     expect(state.selEnd).toBe(5);
   });
 
-  it('plays body->ending1->body->ending2 twice for a full-part selection with repeats', async () => {
+  it('plays the whole tune correctly (voltas expanded, no double-repeat) with nothing selected', async () => {
+    const sequence = await playedMeasureSequence(el);
+    // A (plain, repeats: 1) then B's one body->e1->body->e2 cycle.
+    expect(sequence).toEqual([0, 1, 2, 3, 4, 2, 3, 5]);
+  });
+
+  it('plays identically whether nothing is selected or "Whole Tune" is explicitly clicked', async () => {
+    const noSelectionSequence = await playedMeasureSequence(el);
+    el.querySelector('.tl-select-all').click();
+    const wholeTuneSequence = await playedMeasureSequence(el);
+    expect(noSelectionSequence).toEqual(wholeTuneSequence);
+  });
+
+  it('plays exactly one body->ending1->body->ending2 cycle for a full-part selection (repeats is baked into the endings)', async () => {
+    // part B's `repeats: 2` is informational once it has endings — the
+    // body->e1->body->e2 cycle already plays the body twice (once per
+    // ending), so it must not also be multiplied by `repeats` again.
     el.querySelector('[data-part-index="1"]').click();
     const sequence = await playedMeasureSequence(el);
-    expect(sequence).toEqual([2, 3, 4, 2, 3, 5, 2, 3, 4, 2, 3, 5]);
+    expect(sequence).toEqual([2, 3, 4, 2, 3, 5]);
   });
 
   it('wraps a same-part fragment to ending 1 (repeating the part)', async () => {
@@ -380,6 +396,13 @@ describe('<tune-looper>', () => {
     expect(state.selStart).toBe(0);
     expect(state.selEnd).toBe(3);
     expect(state.wholeTuneSelected).toBe(true);
+  });
+
+  it('expands each plain part by its own repeats exactly once for whole-tune playback', async () => {
+    el.querySelector('.tl-select-all').click();
+    const sequence = await playedMeasureSequence(el);
+    // A (bars [0,1], repeats: 2) then B (bars [2,3], repeats: 3).
+    expect(sequence).toEqual([0, 1, 0, 1, 2, 3, 2, 3, 2, 3]);
   });
 
   it('shows the flat bar count normally, and the repeats-expanded count once whole tune is selected', () => {

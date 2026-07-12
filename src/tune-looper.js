@@ -144,11 +144,17 @@ export class TuneLooper extends HTMLElement {
 
   #expandPart(part) {
     if (!part.endings) {
-      const range = [];
+      const bars = [];
       for (let m = part.startMeasure; m < part.startMeasure + part.bars; m += 1)
-        range.push(m);
+        bars.push(m);
+      const repeats = part.repeats ?? 1;
+      const range = [];
+      for (let r = 0; r < repeats; r += 1) range.push(...bars);
       return range;
     }
+    // `repeats` is informational for a volta part (PRD §2) — the
+    // body->ending1->body->ending2 cycle already *is* the full repeat (the
+    // body is played once per ending), so it must not be multiplied again.
     return [
       ...part.bodyMeasures,
       ...part.endings[0].measures,
@@ -160,18 +166,13 @@ export class TuneLooper extends HTMLElement {
   #buildWholeTuneSequence() {
     const seq = [];
     for (const part of this.#tune.parts) {
-      const partRange = this.#expandPart(part);
-      const repeats = part.repeats ?? 1;
-      for (let r = 0; r < repeats; r += 1) seq.push(...partRange);
+      seq.push(...this.#expandPart(part));
     }
     return seq;
   }
 
   #buildFullPartSequence(part) {
-    const repeats = part.repeats ?? 1;
-    const seq = [];
-    for (let r = 0; r < repeats; r += 1) seq.push(...this.#expandPart(part));
-    return seq;
+    return this.#expandPart(part);
   }
 
   #buildEndingsOnlySequence(part) {
@@ -206,7 +207,12 @@ export class TuneLooper extends HTMLElement {
   }
 
   #buildMeasureSequence(selStart, selEnd) {
-    if (this.#wholeTuneSelected) return this.#buildWholeTuneSequence();
+    // With nothing selected at all, play the whole tune the same correct
+    // way "Whole Tune" does (repeats/voltas expanded) rather than a naive
+    // score-order walk through the raw measures array.
+    if (this.#wholeTuneSelected || this.#selStart === null) {
+      return this.#buildWholeTuneSequence();
+    }
 
     const classification = this.#classifySelection();
     switch (classification.kind) {
