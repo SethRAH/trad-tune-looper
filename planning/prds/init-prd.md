@@ -184,7 +184,17 @@ the MIDI and are **never** duplicated here (two sources of truth drift).
     // same toggle — not authored here.
   },
 
-  "source": "https://thesession.org/tunes/52", // optional; the setting you transcribed
+  "attribution": {
+    // optional; required when the tune was transcribed from a licensed
+    // source (e.g. thesession.org's data is ODbl-licensed and requires
+    // attribution when reused).
+    "source": "The Session",
+    "sourceUrl": "https://thesession.org/tunes/52", // permalink to the setting
+    "license": "ODbl",
+    "licenseUrl": "https://opendatacommons.org/licenses/odbl/1.0/",
+    "contributor": "someuser", // thesession.org username who submitted it
+    "contributedDate": "2004-06-08", // as shown on the source page
+  },
 
   "timeSignatureOverride": null, // optional escape hatch for tunes whose MIDI
   // time-sig meta is missing/wrong. Expect ~never.
@@ -271,7 +281,7 @@ non-pickup note. Store on the model for the hint UI.
   measures: [ { index, notes: [ { midi, offsetTicks, durTicks, isPickup } ] } ],
   parts:    [ { name, startMeasure, bars, repeats } ],  // startMeasure normalized to 0-based here
   hints:    { key, startingNote },
-  source
+  attribution
 }
 ```
 

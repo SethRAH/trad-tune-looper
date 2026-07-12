@@ -96,6 +96,27 @@ describe('loadTune', () => {
     expect(tune.hints.key).toBe('G');
   });
 
+  it('defaults attribution to null when not authored', () => {
+    const tune = loadTune(eightBarJigMetadata, eightBarJigMidi());
+    expect(tune.attribution).toBeNull();
+  });
+
+  it('passes through authored attribution', () => {
+    const metadata = {
+      ...eightBarJigMetadata,
+      attribution: {
+        source: 'The Session',
+        sourceUrl: 'https://thesession.org/tunes/52',
+        license: 'ODbl',
+        licenseUrl: 'https://opendatacommons.org/licenses/odbl/1.0/',
+        contributor: 'someuser',
+        contributedDate: '2004-06-08',
+      },
+    };
+    const tune = loadTune(metadata, eightBarJigMidi());
+    expect(tune.attribution).toEqual(metadata.attribution);
+  });
+
   it('derives practiceTempo from midiTempo when not authored', () => {
     const tune = loadTune(eightBarJigMetadata, eightBarJigMidi());
     expect(tune.midiTempo).toBe(120);

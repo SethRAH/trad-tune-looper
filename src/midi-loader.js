@@ -141,6 +141,6 @@ export function loadTune(metadata, parsedMidi) {
       startMeasure: part.startMeasure - 1,
     })),
     hints: { key: metadata.hints?.key ?? null, startingNote },
-    source: metadata.source ?? null,
+    attribution: metadata.attribution ?? null,
   };
 }

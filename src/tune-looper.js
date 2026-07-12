@@ -354,6 +354,19 @@ export class TuneLooper extends HTMLElement {
          </div>`
       : '';
 
+    const attributionHtml = tune.attribution
+      ? `<div class="tl-attribution">
+           Contains information from <a href="${tune.attribution.sourceUrl}" target="_blank" rel="noopener">${tune.attribution.source}</a>,
+           which is made available here under the Open Database License
+           (<a href="${tune.attribution.licenseUrl}" target="_blank" rel="noopener">${tune.attribution.license}</a>).
+           ${
+             tune.attribution.contributor
+               ? `Added by ${tune.attribution.contributor}${tune.attribution.contributedDate ? ` on ${tune.attribution.contributedDate}` : ''}.`
+               : ''
+           }
+         </div>`
+      : '';
+
     this.innerHTML = `
       <div class="tl-header">
         <span class="tl-title">${tune.title}</span>
@@ -363,6 +376,7 @@ export class TuneLooper extends HTMLElement {
         <button type="button" class="tl-hint-toggle" aria-pressed="${this.#hintsVisible}">?</button>
         ${hintsHtml}
       </div>
+      ${attributionHtml}
       <div class="tl-select-all-row">
         <button type="button" class="tl-select-all">Whole Tune</button>
       </div>

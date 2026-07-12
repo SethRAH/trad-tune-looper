@@ -126,6 +126,12 @@ tune-looper {
   gap: var(--space-3);
 }
 
+.tl-attribution {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-bottom: var(--space-3);
+}
+
 .tl-select-all-row {
   margin-bottom: var(--space-2);
 }

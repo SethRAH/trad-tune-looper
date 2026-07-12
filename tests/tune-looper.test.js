@@ -190,6 +190,39 @@ describe('<tune-looper>', () => {
     expect(el.textContent).toContain('Starts on D');
   });
 
+  it('renders no attribution when the tune has none', () => {
+    expect(el.querySelector('.tl-attribution')).toBeNull();
+  });
+
+  it('renders an always-visible attribution note when the tune has one', () => {
+    el.tune = {
+      ...makeTune(),
+      attribution: {
+        source: 'The Session',
+        sourceUrl: 'https://thesession.org/tunes/52',
+        license: 'ODbl',
+        licenseUrl: 'https://opendatacommons.org/licenses/odbl/1.0/',
+        contributor: 'someuser',
+        contributedDate: '2004-06-08',
+      },
+    };
+
+    const attribution = el.querySelector('.tl-attribution');
+    expect(attribution).not.toBeNull();
+
+    const sourceLink = attribution.querySelector(
+      'a[href="https://thesession.org/tunes/52"]',
+    );
+    expect(sourceLink.textContent).toBe('The Session');
+
+    const licenseLink = attribution.querySelector(
+      'a[href="https://opendatacommons.org/licenses/odbl/1.0/"]',
+    );
+    expect(licenseLink.textContent).toBe('ODbl');
+
+    expect(attribution.textContent).toContain('Added by someuser on 2004-06-08.');
+  });
+
   it('defaults the tempo slider to the practiceTempo', () => {
     expect(el.getState().bpm).toBe(90);
     expect(el.querySelector('.tl-tempo-slider').value).toBe('90');
