@@ -1,10 +1,38 @@
 import * as Tone from 'tone';
+import { partScoreBars } from './midi-loader.js';
 
 const TEMPO_MIN = 40;
 const TEMPO_MAX = 180;
 
 function partLabelStyle(part) {
-  return `flex: ${part.bars} 1 0`;
+  return `flex: ${partScoreBars(part)} 1 0`;
+}
+
+function findEndingContaining(tune, measureIndex) {
+  for (const part of tune.parts) {
+    if (!part.endings) continue;
+    for (let endingIndex = 0; endingIndex < part.endings.length; endingIndex += 1) {
+      if (part.endings[endingIndex].measures.includes(measureIndex)) {
+        return { part, endingIndex };
+      }
+    }
+  }
+  return null;
+}
+
+function findOwningPart(tune, measureIndex) {
+  for (const part of tune.parts) {
+    if (part.endings) {
+      if (part.bodyMeasures.includes(measureIndex)) return part;
+      if (part.endings.some((e) => e.measures.includes(measureIndex))) return part;
+    } else if (
+      measureIndex >= part.startMeasure &&
+      measureIndex < part.startMeasure + part.bars
+    ) {
+      return part;
+    }
+  }
+  return null;
 }
 
 export class TuneLooper extends HTMLElement {
@@ -12,6 +40,7 @@ export class TuneLooper extends HTMLElement {
   #selStart = null;
   #selEnd = null;
   #wholeTuneSelected = false;
+  #endingOverride = null;
   #playing = false;
   #bpm = null;
   #restBar = false;
@@ -113,23 +142,86 @@ export class TuneLooper extends HTMLElement {
     transport.start();
   }
 
-  #buildMeasureSequence(selStart, selEnd) {
-    if (!this.#wholeTuneSelected) {
+  #expandPart(part) {
+    if (!part.endings) {
+      const range = [];
+      for (let m = part.startMeasure; m < part.startMeasure + part.bars; m += 1)
+        range.push(m);
+      return range;
+    }
+    return [
+      ...part.bodyMeasures,
+      ...part.endings[0].measures,
+      ...part.bodyMeasures,
+      ...part.endings[1].measures,
+    ];
+  }
+
+  #buildWholeTuneSequence() {
+    const seq = [];
+    for (const part of this.#tune.parts) {
+      const partRange = this.#expandPart(part);
+      const repeats = part.repeats ?? 1;
+      for (let r = 0; r < repeats; r += 1) seq.push(...partRange);
+    }
+    return seq;
+  }
+
+  #buildFullPartSequence(part) {
+    const repeats = part.repeats ?? 1;
+    const seq = [];
+    for (let r = 0; r < repeats; r += 1) seq.push(...this.#expandPart(part));
+    return seq;
+  }
+
+  #buildEndingsOnlySequence(part) {
+    return [...part.endings[0].measures, ...part.endings[1].measures];
+  }
+
+  #buildFragmentSequence(selStart, selEnd, classification) {
+    const { part, endingIndex: targetIndex } = classification;
+    const rawEnding = findEndingContaining(this.#tune, selEnd);
+
+    if (!rawEnding) {
       const seq = [];
       for (let m = selStart; m <= selEnd; m += 1) seq.push(m);
       return seq;
     }
 
+    // A literal selStart..selEnd walk would pass through whichever ending
+    // sits *between* the body and the target ending in score order (e1
+    // always precedes e2) — e1/e2 are alternatives at the same as-played
+    // slot, not a contiguous run, so always rebuild explicitly as
+    // body-through-selStart + the target ending's parallel bars, rather
+    // than ever walking a flat range through the endings block.
+    const rawMeasures = rawEnding.part.endings[rawEnding.endingIndex].measures;
+    const offset = rawMeasures.indexOf(selEnd);
+    const targetMeasures = part.endings[targetIndex].measures.slice(0, offset + 1);
+    const bodyLast = part.bodyMeasures[part.bodyMeasures.length - 1];
+
     const seq = [];
-    for (const part of this.#tune.parts) {
-      const partRange = [];
-      for (let m = part.startMeasure; m < part.startMeasure + part.bars; m += 1) {
-        partRange.push(m);
-      }
-      const repeats = part.repeats ?? 1;
-      for (let r = 0; r < repeats; r += 1) seq.push(...partRange);
-    }
+    for (let m = selStart; m <= bodyLast; m += 1) seq.push(m);
+    seq.push(...targetMeasures);
     return seq;
+  }
+
+  #buildMeasureSequence(selStart, selEnd) {
+    if (this.#wholeTuneSelected) return this.#buildWholeTuneSequence();
+
+    const classification = this.#classifySelection();
+    switch (classification.kind) {
+      case 'full-part':
+        return this.#buildFullPartSequence(classification.part);
+      case 'endings-only':
+        return this.#buildEndingsOnlySequence(classification.part);
+      case 'fragment-wrap':
+        return this.#buildFragmentSequence(selStart, selEnd, classification);
+      default: {
+        const seq = [];
+        for (let m = selStart; m <= selEnd; m += 1) seq.push(m);
+        return seq;
+      }
+    }
   }
 
   #runLoop(cursor, measureSequence, suppressEntryPickup) {
@@ -242,7 +334,7 @@ export class TuneLooper extends HTMLElement {
     const hintToggle = event.target.closest('.tl-hint-toggle');
 
     if (cell) {
-      this.#selectMeasure(Number(cell.dataset.measureIndex));
+      this.#selectMeasure(Number(cell.dataset.measureIndex), cell.dataset.endingRole);
     } else if (part) {
       this.#selectPart(Number(part.dataset.partIndex));
     } else if (selectAll) {
@@ -271,32 +363,92 @@ export class TuneLooper extends HTMLElement {
     }
   };
 
-  #setSelection(selStart, selEnd, wholeTuneSelected) {
+  #setSelection(selStart, selEnd, wholeTuneSelected, endingOverride = null) {
     this.#selStart = selStart;
     this.#selEnd = selEnd;
     this.#wholeTuneSelected = wholeTuneSelected;
+    this.#endingOverride = endingOverride;
   }
 
-  #selectMeasure(measureIndex) {
+  #selectMeasure(measureIndex, endingRole) {
+    const override = endingRole ? Number(endingRole) : null;
     if (this.#selStart === null || this.#selEnd !== null) {
-      this.#setSelection(measureIndex, null, false);
+      this.#setSelection(measureIndex, null, false, override);
     } else {
       let [start, end] = [this.#selStart, measureIndex];
       if (end < start) [start, end] = [end, start];
-      this.#setSelection(start, end, false);
+      this.#setSelection(start, end, false, override);
     }
     this.#render();
   }
 
   #selectPart(partIndex) {
     const part = this.#tune.parts[partIndex];
-    this.#setSelection(part.startMeasure, part.startMeasure + part.bars - 1, false);
+    this.#setSelection(
+      part.startMeasure,
+      part.startMeasure + partScoreBars(part) - 1,
+      false,
+    );
     this.#render();
   }
 
   #selectAll() {
     this.#setSelection(0, this.#tune.measures.length - 1, true);
     this.#render();
+  }
+
+  #isFullPartSelection() {
+    if (this.#selStart === null || this.#selEnd === null) return null;
+    for (const part of this.#tune.parts) {
+      if (!part.endings) continue;
+      const bars = partScoreBars(part);
+      if (
+        this.#selStart === part.startMeasure &&
+        this.#selEnd === part.startMeasure + bars - 1
+      ) {
+        return part;
+      }
+    }
+    return null;
+  }
+
+  #classifySelection() {
+    if (this.#selStart === null || this.#selEnd === null) {
+      return { kind: 'plain' };
+    }
+
+    const fullPart = this.#isFullPartSelection();
+    if (fullPart) return { kind: 'full-part', part: fullPart };
+
+    const endEnding = findEndingContaining(this.#tune, this.#selEnd);
+    if (!endEnding) return { kind: 'plain' };
+
+    const startEnding = findEndingContaining(this.#tune, this.#selStart);
+    if (startEnding && startEnding.part === endEnding.part) {
+      if (startEnding.endingIndex !== endEnding.endingIndex) {
+        return { kind: 'endings-only', part: endEnding.part };
+      }
+      // Selection is already confined to a single ending — unambiguous.
+      return { kind: 'plain' };
+    }
+
+    if (this.#endingOverride !== null) {
+      return {
+        kind: 'fragment-wrap',
+        part: endEnding.part,
+        endingIndex: this.#endingOverride - 1,
+        override: true,
+      };
+    }
+
+    const selStartPart = findOwningPart(this.#tune, this.#selStart);
+    const wantsEnding1 = selStartPart === endEnding.part;
+    return {
+      kind: 'fragment-wrap',
+      part: endEnding.part,
+      endingIndex: wantsEnding1 ? 0 : 1,
+      override: false,
+    };
   }
 
   #cellClass(measureIndex) {
@@ -317,9 +469,9 @@ export class TuneLooper extends HTMLElement {
       return;
     }
 
-    const totalBars = tune.parts.reduce((sum, part) => sum + part.bars, 0);
+    const totalBars = tune.parts.reduce((sum, part) => sum + partScoreBars(part), 0);
     const barCountLabel = this.#wholeTuneSelected
-      ? `${tune.parts.reduce((sum, part) => sum + part.bars * (part.repeats ?? 1), 0)} bars with repeats`
+      ? `${tune.parts.reduce((sum, part) => sum + partScoreBars(part) * (part.repeats ?? 1), 0)} bars with repeats`
       : `${totalBars} bars`;
     const hasBarOnePickup = tune.downbeatTick > 0;
     const pickupCellHtml = hasBarOnePickup
@@ -335,15 +487,66 @@ export class TuneLooper extends HTMLElement {
       )
       .join('');
 
-    const gridHtml = tune.measures
-      .map((measure) => {
-        const isCurrent =
-          measure.index === this.#currentMeasure ? 'tl-cell--current' : '';
+    const renderCell = (measureIndex, label, opts = {}) => {
+      const isCurrent = measureIndex === this.#currentMeasure ? 'tl-cell--current' : '';
+      const firstClass = opts.isFirst ? 'tl-ending-cell--first' : '';
+      const endingAttr = opts.endingRole ? ` data-ending-role="${opts.endingRole}"` : '';
+      const bracket = opts.isFirst
+        ? `<span class="tl-ending-label">${opts.endingRole === 1 ? '1st' : '2nd'}</span>`
+        : '';
+      return `
+        <button type="button" class="tl-cell ${this.#cellClass(measureIndex)} ${isCurrent} ${firstClass}"
+                data-measure-index="${measureIndex}"${endingAttr}>
+          ${bracket}${label}
+        </button>`;
+    };
+
+    const classification = this.#classifySelection();
+    const liveEndingFor = (part) => {
+      if (classification.kind !== 'fragment-wrap' || classification.part !== part)
+        return null;
+      return classification.endingIndex;
+    };
+
+    const gridHtml = tune.parts
+      .map((part) => {
+        if (!part.endings) {
+          const cells = [];
+          for (let m = part.startMeasure; m < part.startMeasure + part.bars; m += 1) {
+            cells.push(renderCell(m, m + 1));
+          }
+          return cells.join('');
+        }
+
+        const live = liveEndingFor(part);
+        const rowClass = (idx) =>
+          live === null
+            ? ''
+            : live === idx
+              ? 'tl-ending-row--live'
+              : 'tl-ending-row--dim';
+
+        const bodyCellsHtml = part.bodyMeasures.map((m) => renderCell(m, m + 1)).join('');
+        const endingsWidth = Math.max(...part.endings.map((e) => e.bars));
+        const endingRowsHtml = part.endings
+          .map((ending, endingIdx) => {
+            const cellsHtml = ending.measures
+              .map((m, i) =>
+                renderCell(m, i + 1, { endingRole: endingIdx + 1, isFirst: i === 0 }),
+              )
+              .join('');
+            return `
+              <div class="tl-ending-row ${rowClass(endingIdx)}" style="flex: ${ending.bars} 1 0">
+                ${cellsHtml}
+              </div>`;
+          })
+          .join('');
+
         return `
-          <button type="button" class="tl-cell ${this.#cellClass(measure.index)} ${isCurrent}"
-                  data-measure-index="${measure.index}">
-            ${measure.index + 1}
-          </button>`;
+          <div class="tl-part-frame" style="flex: ${part.bodyBars + endingsWidth} 1 0">
+            <div class="tl-part-body" style="flex: ${part.bodyBars} 1 0">${bodyCellsHtml}</div>
+            <div class="tl-part-endings" style="flex: ${endingsWidth} 1 0">${endingRowsHtml}</div>
+          </div>`;
       })
       .join('');
 

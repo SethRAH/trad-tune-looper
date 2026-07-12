@@ -222,3 +222,128 @@ describe('loadTune', () => {
     expect(() => loadTune(badMetadata, eightBarJigMidi())).toThrow(/out of range/);
   });
 });
+
+describe('loadTune with voltas', () => {
+  // 4/4, ppq=480 (fixture default) -> ticksPerMeasure = 1920, no pickup.
+  const TPM = 1920;
+
+  function voltaTuneMidi({ bodyBars = 2, endingBars = 1 } = {}) {
+    // Part A: 2 plain bars. Part B: bodyBars body + endingBars e1 + endingBars e2.
+    const notes = [
+      { midi: 60, ticks: 0, durationTicks: 480 }, // A bar 1
+      { midi: 62, ticks: TPM, durationTicks: 480 }, // A bar 2
+    ];
+    let tick = 2 * TPM;
+    for (let i = 0; i < bodyBars; i += 1, tick += TPM) {
+      notes.push({ midi: 64, ticks: tick, durationTicks: 480 });
+    }
+    for (let i = 0; i < endingBars; i += 1, tick += TPM) {
+      notes.push({ midi: 65, ticks: tick, durationTicks: 480 }); // ending 1
+    }
+    for (let i = 0; i < endingBars; i += 1, tick += TPM) {
+      notes.push({ midi: 67, ticks: tick, durationTicks: 480 }); // ending 2
+    }
+    return buildMidi({ tempo: 120, timeSignature: [4, 4], notes });
+  }
+
+  function voltaMetadata({ bodyBars = 2, endingBars = 1 } = {}) {
+    return {
+      id: 'volta-test',
+      title: 'Volta Test',
+      type: 'reel',
+      parts: [
+        { name: 'A', startMeasure: 1, bars: 2 },
+        {
+          name: 'B',
+          startMeasure: 3,
+          bodyBars,
+          endings: [{ bars: endingBars }, { bars: endingBars }],
+        },
+      ],
+    };
+  }
+
+  it('slices a 1-bar volta part into contiguous score-order body/ending index arrays', () => {
+    const tune = loadTune(voltaMetadata(), voltaTuneMidi());
+    const partB = tune.parts.find((p) => p.name === 'B');
+
+    expect(partB.startMeasure).toBe(2); // 0-based
+    expect(partB.bodyBars).toBe(2);
+    expect(partB.bodyMeasures).toEqual([2, 3]);
+    expect(partB.endings).toHaveLength(2);
+    expect(partB.endings[0]).toEqual({ bars: 1, measures: [4] });
+    expect(partB.endings[1]).toEqual({ bars: 1, measures: [5] });
+  });
+
+  it('slices a multi-bar (4-bar) volta part the same way, proving length-agnosticism', () => {
+    const tune = loadTune(
+      voltaMetadata({ bodyBars: 4, endingBars: 4 }),
+      voltaTuneMidi({ bodyBars: 4, endingBars: 4 }),
+    );
+    const partB = tune.parts.find((p) => p.name === 'B');
+
+    expect(partB.bodyMeasures).toEqual([2, 3, 4, 5]);
+    expect(partB.endings[0].measures).toEqual([6, 7, 8, 9]);
+    expect(partB.endings[1].measures).toEqual([10, 11, 12, 13]);
+  });
+
+  it('does not affect plain-part pickup bucketing when a volta part is present', () => {
+    const tune = loadTune(voltaMetadata(), voltaTuneMidi());
+    const measure0 = tune.measures.find((m) => m.index === 0);
+    expect(measure0.notes[0].isPickup).toBe(false);
+    expect(measure0.notes[0].midi).toBe(60);
+  });
+
+  it('validates part-boundary contiguity against a previous volta part', () => {
+    const badMetadata = {
+      ...voltaMetadata(),
+      parts: [
+        voltaMetadata().parts[0],
+        { ...voltaMetadata().parts[1], startMeasure: 4 }, // should be 3
+      ],
+    };
+    expect(() => loadTune(badMetadata, voltaTuneMidi())).toThrow(/startMeasure/);
+  });
+
+  it('validates total-bars-sum against a volta part (bodyBars + endings)', () => {
+    const badMetadata = {
+      ...voltaMetadata(),
+      parts: [voltaMetadata().parts[0], { ...voltaMetadata().parts[1], bodyBars: 99 }],
+    };
+    expect(() => loadTune(badMetadata, voltaTuneMidi())).toThrow(/total full measures/);
+  });
+
+  it('throws when a volta part does not have exactly two endings', () => {
+    const badMetadata = {
+      ...voltaMetadata(),
+      parts: [
+        voltaMetadata().parts[0],
+        { ...voltaMetadata().parts[1], endings: [{ bars: 1 }] },
+      ],
+    };
+    expect(() => loadTune(badMetadata, voltaTuneMidi())).toThrow(/exactly two endings/);
+  });
+
+  it('throws when a volta part has a non-positive bodyBars', () => {
+    const badMetadata = {
+      ...voltaMetadata(),
+      parts: [voltaMetadata().parts[0], { ...voltaMetadata().parts[1], bodyBars: 0 }],
+    };
+    expect(() => loadTune(badMetadata, voltaTuneMidi())).toThrow(
+      /must be a positive number of bars/,
+    );
+  });
+
+  it('throws when a volta part has a non-positive ending bar count', () => {
+    const badMetadata = {
+      ...voltaMetadata(),
+      parts: [
+        voltaMetadata().parts[0],
+        { ...voltaMetadata().parts[1], endings: [{ bars: 1 }, { bars: 0 }] },
+      ],
+    };
+    expect(() => loadTune(badMetadata, voltaTuneMidi())).toThrow(
+      /must be a positive number of bars/,
+    );
+  });
+});

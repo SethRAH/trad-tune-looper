@@ -17,6 +17,16 @@ function pickMelodyTrack(tracks) {
   );
 }
 
+export function partScoreBars(part) {
+  return part.endings
+    ? part.bodyBars + part.endings.reduce((sum, e) => sum + e.bars, 0)
+    : part.bars;
+}
+
+function sliceIndices(from, count) {
+  return Array.from({ length: count }, (_, i) => from + i);
+}
+
 /**
  * Pure function: takes a tune's authored metadata + its parsed MIDI (via
  * @tonejs/midi) and returns the NormalizedTune model the rest of the app
@@ -90,28 +100,51 @@ export function loadTune(metadata, parsedMidi) {
 
   const totalFullMeasures = maxMeasureIndex + 1;
 
+  const tuneRef = `Tune "${metadata.id}"`;
+
+  for (const part of metadata.parts) {
+    if (part.endings) {
+      if (part.endings.length !== 2) {
+        throw new Error(
+          `${tuneRef}: Part "${part.name}" must have exactly two endings (1st/2nd), got ${part.endings.length}`,
+        );
+      }
+      if (!(part.bodyBars > 0)) {
+        throw new Error(
+          `${tuneRef}: Part "${part.name}" bodyBars must be a positive number of bars, got ${part.bodyBars}`,
+        );
+      }
+      for (const [i, ending] of part.endings.entries()) {
+        if (!(ending.bars > 0)) {
+          throw new Error(
+            `${tuneRef}: Part "${part.name}" ending ${i + 1} bars must be a positive number of bars, got ${ending.bars}`,
+          );
+        }
+      }
+    }
+  }
   for (const part of metadata.parts) {
     if (part.startMeasure < 1 || part.startMeasure > totalFullMeasures) {
       throw new Error(
-        `Part "${part.name}" startMeasure ${part.startMeasure} is out of range (1..${totalFullMeasures})`,
+        `${tuneRef}: Part "${part.name}" startMeasure ${part.startMeasure} is out of range (1..${totalFullMeasures})`,
       );
     }
   }
   for (let i = 1; i < metadata.parts.length; i += 1) {
     const prev = metadata.parts[i - 1];
     const curr = metadata.parts[i];
-    const expected = prev.startMeasure + prev.bars;
+    const expected = prev.startMeasure + partScoreBars(prev);
     if (curr.startMeasure !== expected) {
       throw new Error(
-        `Part "${curr.name}" startMeasure ${curr.startMeasure} does not follow "${prev.name}" ` +
+        `${tuneRef}: Part "${curr.name}" startMeasure ${curr.startMeasure} does not follow "${prev.name}" ` +
           `(expected ${expected})`,
       );
     }
   }
-  const barsSum = metadata.parts.reduce((sum, part) => sum + part.bars, 0);
+  const barsSum = metadata.parts.reduce((sum, part) => sum + partScoreBars(part), 0);
   if (barsSum !== totalFullMeasures) {
     throw new Error(
-      `Sum of part bars (${barsSum}) does not match total full measures (${totalFullMeasures})`,
+      `${tuneRef}: Sum of part bars (${barsSum}) does not match total full measures (${totalFullMeasures})`,
     );
   }
 
@@ -136,10 +169,26 @@ export function loadTune(metadata, parsedMidi) {
     midiTempo,
     practiceTempo,
     measures,
-    parts: metadata.parts.map((part) => ({
-      ...part,
-      startMeasure: part.startMeasure - 1,
-    })),
+    parts: metadata.parts.map((part) => {
+      const startMeasure = part.startMeasure - 1;
+      if (!part.endings) return { ...part, startMeasure };
+
+      const bodyMeasures = sliceIndices(startMeasure, part.bodyBars);
+      let cursor = startMeasure + part.bodyBars;
+      const endings = part.endings.map((e) => {
+        const measures = sliceIndices(cursor, e.bars);
+        cursor += e.bars;
+        return { bars: e.bars, measures };
+      });
+      return {
+        name: part.name,
+        startMeasure,
+        repeats: part.repeats,
+        bodyBars: part.bodyBars,
+        bodyMeasures,
+        endings,
+      };
+    }),
     hints: { key: metadata.hints?.key ?? null, startingNote },
     attribution: metadata.attribution ?? null,
   };

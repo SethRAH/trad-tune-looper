@@ -30,6 +30,7 @@ vi.mock('tone', () => {
   };
 });
 
+import * as Tone from 'tone';
 import '../src/tune-looper.js';
 
 function makeTune() {
@@ -49,6 +50,176 @@ function makeTune() {
     hints: { key: 'G', startingNote: 'D' },
   };
 }
+
+function makeVoltaTune() {
+  return {
+    id: 'test-volta-tune',
+    title: 'Test Volta Tune',
+    type: 'reel',
+    tsNum: 4,
+    tsDen: 4,
+    ppq: 480,
+    ticksPerBeat: 480,
+    ticksPerMeasure: 1920,
+    downbeatTick: 0,
+    practiceTempo: 90,
+    measures: [0, 1, 2, 3, 4, 5].map((index) => ({ index, notes: [] })),
+    parts: [
+      { name: 'A', startMeasure: 0, bars: 2, repeats: 1 },
+      {
+        name: 'B',
+        startMeasure: 2,
+        bodyBars: 2,
+        bodyMeasures: [2, 3],
+        endings: [
+          { bars: 1, measures: [4] },
+          { bars: 1, measures: [5] },
+        ],
+        repeats: 2,
+      },
+    ],
+    hints: { key: 'G', startingNote: 'D' },
+  };
+}
+
+// Drives real playback scheduling (mocked Tone) and reconstructs the actual
+// measure-play order from the "set current measure" callbacks passed to
+// Tone.Transport.scheduleOnce — these are the zero-arg callbacks scheduled
+// per measure in #buildLoopIteration, distinguishable from the one-arg
+// note/metronome callbacks and from the single trailing zero-arg
+// loop-continuation call (which we deliberately never invoke, to avoid
+// recursing into the next loop iteration).
+async function playedMeasureSequence(el) {
+  const transport = Tone.getTransport();
+  transport.scheduleOnce.mockClear();
+  el.play();
+  await Promise.resolve();
+  await Promise.resolve();
+
+  const calls = transport.scheduleOnce.mock.calls;
+  const setterCalls = calls.slice(0, -1).filter(([callback]) => callback.length === 0);
+  return setterCalls.map(([callback]) => {
+    callback();
+    return Number(el.querySelector('.tl-cell--current').dataset.measureIndex);
+  });
+}
+
+describe('<tune-looper> voltas', () => {
+  let el;
+
+  beforeEach(() => {
+    el = document.createElement('tune-looper');
+    document.body.appendChild(el);
+    el.tune = makeVoltaTune();
+  });
+
+  it("selects a volta part's full score-order span on part-name click", () => {
+    el.querySelector('[data-part-index="1"]').click();
+    const state = el.getState();
+    expect(state.selStart).toBe(2);
+    expect(state.selEnd).toBe(5);
+  });
+
+  it('plays body->ending1->body->ending2 twice for a full-part selection with repeats', async () => {
+    el.querySelector('[data-part-index="1"]').click();
+    const sequence = await playedMeasureSequence(el);
+    expect(sequence).toEqual([2, 3, 4, 2, 3, 5, 2, 3, 4, 2, 3, 5]);
+  });
+
+  it('wraps a same-part fragment to ending 1 (repeating the part)', async () => {
+    el.querySelector('[data-measure-index="3"]').click();
+    el.querySelector('[data-measure-index="4"]').click();
+    const sequence = await playedMeasureSequence(el);
+    expect(sequence).toEqual([3, 4]);
+  });
+
+  it('wraps a cross-part fragment to ending 2 (the exit), not ending 1', async () => {
+    // selStart is in part A, so the loop wraps out of B rather than
+    // repeating it, and the wrap target is ending 2 even though ending 1
+    // sits earlier in score order.
+    el.querySelector('[data-measure-index="1"]').click();
+    el.querySelector('[data-measure-index="5"]').click();
+    const sequence = await playedMeasureSequence(el);
+    expect(sequence).toEqual([1, 2, 3, 5]);
+  });
+
+  it('honors a direct click on an ending cell as an override, even against the wrap-target default', async () => {
+    // Same cross-part setup as above (wrap target would be ending 2), but
+    // clicking ending 1's own cell explicitly should win regardless.
+    el.querySelector('[data-measure-index="1"]').click();
+    el.querySelector('[data-measure-index="4"]').click();
+    const sequence = await playedMeasureSequence(el);
+    expect(sequence).toEqual([1, 2, 3, 4]);
+  });
+
+  it('clears a stale ending override once a non-ending click changes the selection', async () => {
+    el.querySelector('[data-measure-index="1"]').click();
+    el.querySelector('[data-measure-index="4"]').click(); // override -> ending 1
+    el.querySelector('[data-measure-index="1"]').click(); // new anchor, no ending role
+    el.querySelector('[data-measure-index="5"]').click(); // completes range, no override
+    const sequence = await playedMeasureSequence(el);
+    expect(sequence).toEqual([1, 2, 3, 5]); // back to wrap-target default (ending 2)
+  });
+
+  it('plays both endings in order for an endings-only selection', async () => {
+    el.querySelector('[data-measure-index="4"]').click();
+    el.querySelector('[data-measure-index="5"]').click();
+    const sequence = await playedMeasureSequence(el);
+    expect(sequence).toEqual([4, 5]);
+  });
+
+  it('renders a volta part as a two-column body/endings frame, plain parts unchanged', () => {
+    expect(el.querySelector('.tl-part-frame')).not.toBeNull();
+    expect(el.querySelectorAll('.tl-part-body [data-measure-index]')).toHaveLength(2);
+    expect(el.querySelectorAll('.tl-ending-row')).toHaveLength(2);
+    expect(el.querySelectorAll('.tl-ending-row [data-measure-index]')).toHaveLength(2);
+
+    // Part A (plain, no endings) still renders as flat cells with no frame.
+    const aCell = el.querySelector('[data-measure-index="0"]');
+    expect(aCell.closest('.tl-part-frame')).toBeNull();
+  });
+
+  it('labels ending cells and grid cells by as-played position, not raw score index', () => {
+    const bodyCell = el.querySelector('.tl-part-body [data-measure-index="2"]');
+    expect(bodyCell.textContent.trim()).toBe('3'); // absolute score position, like a plain part
+
+    const ending1Cell = el.querySelector('[data-measure-index="4"]');
+    const ending2Cell = el.querySelector('[data-measure-index="5"]');
+    expect(ending1Cell.textContent.trim()).toContain('1');
+    expect(ending2Cell.textContent.trim()).toContain('1');
+    expect(ending1Cell.dataset.endingRole).toBe('1');
+    expect(ending2Cell.dataset.endingRole).toBe('2');
+  });
+
+  it('dims the non-live ending row and highlights the wrap-target ending for a fragment selection', () => {
+    el.querySelector('[data-measure-index="1"]').click();
+    el.querySelector('[data-measure-index="5"]').click(); // wrap target: ending 2
+
+    const rows = el.querySelectorAll('.tl-ending-row');
+    expect(rows[0].className).toContain('tl-ending-row--dim');
+    expect(rows[1].className).toContain('tl-ending-row--live');
+  });
+
+  it('does not dim either ending row for a full-part selection', () => {
+    el.querySelector('[data-part-index="1"]').click();
+
+    const rows = el.querySelectorAll('.tl-ending-row');
+    expect(rows[0].className).not.toContain('tl-ending-row--dim');
+    expect(rows[1].className).not.toContain('tl-ending-row--dim');
+  });
+
+  it('highlights a cross-seam range that extends from the body into an ending row', () => {
+    el.querySelector('[data-measure-index="3"]').click();
+    el.querySelector('[data-measure-index="4"]').click();
+
+    expect(el.querySelector('[data-measure-index="3"]').className).toContain(
+      'tl-cell--selected',
+    );
+    expect(el.querySelector('[data-measure-index="4"]').className).toContain(
+      'tl-cell--selected',
+    );
+  });
+});
 
 describe('<tune-looper>', () => {
   let el;

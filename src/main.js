@@ -18,10 +18,18 @@ async function main() {
 
   const container = document.querySelector('#tunes');
   for (const id of manifest.tunes) {
-    const tune = await fetchTune(id);
-    const el = document.createElement('tune-looper');
-    el.tune = tune;
-    container.appendChild(el);
+    try {
+      const tune = await fetchTune(id);
+      const el = document.createElement('tune-looper');
+      el.tune = tune;
+      container.appendChild(el);
+    } catch (err) {
+      console.error(`Failed to load tune "${id}":`, err);
+      const errorEl = document.createElement('div');
+      errorEl.className = 'tune-load-error';
+      errorEl.textContent = `Couldn't load "${id}": ${err.message}`;
+      container.appendChild(errorEl);
+    }
   }
 
   initCoordinator(document);
