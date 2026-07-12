@@ -4,8 +4,19 @@ import { partScoreBars } from './midi-loader.js';
 const TEMPO_MIN = 40;
 const TEMPO_MAX = 180;
 
+// The parts-label row and the grid row must agree on how wide each part is,
+// or the "A"/"B" buttons drift out of alignment with their own cells below.
+// partScoreBars() (body + sum of every ending's bars) is the right measure
+// for bar-count totals, but not for width: the two endings render as
+// *stacked* rows sharing one column, so the on-screen width only needs to
+// fit the wider one of the two, not both summed.
+function partVisualWidth(part) {
+  if (!part.endings) return part.bars;
+  return part.bodyBars + Math.max(...part.endings.map((e) => e.bars));
+}
+
 function partLabelStyle(part) {
-  return `flex: ${partScoreBars(part)} 1 0`;
+  return `flex: ${partVisualWidth(part)} 1 0`;
 }
 
 function findEndingContaining(tune, measureIndex) {
@@ -569,7 +580,7 @@ export class TuneLooper extends HTMLElement {
         displayCounter = endingsStartLabel + endingsWidth;
 
         return `
-          <div class="tl-part-frame" style="flex: ${part.bodyBars + endingsWidth} 1 0">
+          <div class="tl-part-frame" style="flex: ${partVisualWidth(part)} 1 0">
             <div class="tl-part-body" style="flex: ${part.bodyBars} 1 0">${bodyCellsHtml}</div>
             <div class="tl-part-endings" style="flex: ${endingsWidth} 1 0">${endingRowsHtml}</div>
           </div>`;

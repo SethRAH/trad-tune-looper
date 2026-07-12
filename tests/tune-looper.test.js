@@ -319,6 +319,65 @@ describe('<tune-looper> voltas', () => {
     expect(labelFor(16)).toContain('16');
     expect(labelFor(17)).toContain('16');
   });
+
+  it('sizes the part-name button to match its grid frame width, even when parts have differently-shaped endings (Old Man Dillon shape)', () => {
+    // A: 7 body bars + two 1-bar endings (9 bars total, but the endings
+    // stack in one column so the on-screen width only needs to fit 1 of
+    // them: 7+1=8). B: 4 body bars + two 4-bar endings (12 bars total,
+    // on-screen width 4+4=8). A and B need equal *visual* width (8 and 8)
+    // even though their bar-count totals differ (9 vs 12) — sizing the
+    // "A"/"B" buttons by bar-count total instead of visual width would
+    // drift them out of alignment with their own cells below.
+    const tune = {
+      id: 'old-man-dillon-shape',
+      title: 'Old Man Dillon Shape',
+      type: 'jig',
+      tsNum: 6,
+      tsDen: 8,
+      ppq: 480,
+      ticksPerBeat: 240,
+      ticksPerMeasure: 1440,
+      downbeatTick: 0,
+      practiceTempo: 90,
+      measures: Array.from({ length: 21 }, (_, index) => ({ index, notes: [] })),
+      parts: [
+        {
+          name: 'A',
+          startMeasure: 0,
+          bodyBars: 7,
+          bodyMeasures: [0, 1, 2, 3, 4, 5, 6],
+          endings: [
+            { bars: 1, measures: [7] },
+            { bars: 1, measures: [8] },
+          ],
+          repeats: 2,
+        },
+        {
+          name: 'B',
+          startMeasure: 9,
+          bodyBars: 4,
+          bodyMeasures: [9, 10, 11, 12],
+          endings: [
+            { bars: 4, measures: [13, 14, 15, 16] },
+            { bars: 4, measures: [17, 18, 19, 20] },
+          ],
+          repeats: 2,
+        },
+      ],
+      hints: { key: 'A Dorian' },
+    };
+
+    el.tune = tune;
+
+    const flexOf = (element) => Number(element.style.flex.split(' ')[0]);
+    const partButtons = el.querySelectorAll('.tl-part');
+    const partFrames = el.querySelectorAll('.tl-part-frame');
+
+    expect(flexOf(partButtons[0])).toBe(flexOf(partFrames[0])); // A: 8 === 8
+    expect(flexOf(partButtons[1])).toBe(flexOf(partFrames[1])); // B: 8 === 8
+    expect(flexOf(partButtons[0])).toBe(8);
+    expect(flexOf(partButtons[1])).toBe(8);
+  });
 });
 
 describe('<tune-looper>', () => {
