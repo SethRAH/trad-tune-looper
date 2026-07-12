@@ -176,10 +176,23 @@ export function loadTune(metadata, parsedMidi) {
       const bodyMeasures = sliceIndices(startMeasure, part.bodyBars);
       let cursor = startMeasure + part.bodyBars;
       const endings = part.endings.map((e) => {
-        const measures = sliceIndices(cursor, e.bars);
+        const endingMeasures = sliceIndices(cursor, e.bars);
         cursor += e.bars;
-        return { bars: e.bars, measures };
+        return { bars: e.bars, measures: endingMeasures };
       });
+
+      // A pickup transcribed at the tail of the body's last bar is
+      // score-adjacent only to ending 1 (ending 2 always sits later on the
+      // timeline), so the global tick-based bucketing above only ever
+      // attaches it there. Both endings begin at the same as-played slot
+      // right after the body, so duplicate that pickup onto ending 2's
+      // first bar too — otherwise playing into ending 2 silently drops it.
+      const [ending1, ending2] = endings;
+      const pickupNotes = measures[ending1.measures[0]].notes.filter((n) => n.isPickup);
+      if (pickupNotes.length > 0) {
+        measures[ending2.measures[0]].notes.push(...pickupNotes.map((n) => ({ ...n })));
+      }
+
       return {
         name: part.name,
         startMeasure,

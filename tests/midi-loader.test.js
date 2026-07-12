@@ -346,4 +346,56 @@ describe('loadTune with voltas', () => {
       /must be a positive number of bars/,
     );
   });
+
+  it('duplicates a pickup at the top of the endings onto both ending 1 and ending 2', () => {
+    // The pickup-window bucketing is global/score-order-only, so a pickup
+    // transcribed at the tail of the body's last bar is score-adjacent only
+    // to ending 1 (ending 2 sits later on the timeline) and would otherwise
+    // never reach ending 2's bucket at all — silently dropping that note
+    // whenever playback wraps into ending 2 instead of ending 1.
+    const pickupBeats = 1;
+    const ticksPerBeat = 480; // ppq(480)*4/4 for 4/4
+    const downbeatTick = pickupBeats * ticksPerBeat;
+
+    const notes = [
+      { midi: 60, ticks: downbeatTick + 0 * TPM, durationTicks: 480 }, // A bar 1
+      { midi: 62, ticks: downbeatTick + 1 * TPM, durationTicks: 480 }, // A bar 2
+      { midi: 64, ticks: downbeatTick + 2 * TPM, durationTicks: 480 }, // B body bar 1
+      { midi: 65, ticks: downbeatTick + 3 * TPM, durationTicks: 480 }, // B body bar 2 downbeat
+      // Pickup in the tail of B's last body bar, leading into the endings slot.
+      { midi: 69, ticks: downbeatTick + 4 * TPM - 100, durationTicks: 100 },
+      { midi: 67, ticks: downbeatTick + 4 * TPM, durationTicks: 480 }, // ending 1 downbeat
+      { midi: 71, ticks: downbeatTick + 5 * TPM, durationTicks: 480 }, // ending 2 downbeat
+    ];
+    const midi = buildMidi({ tempo: 120, timeSignature: [4, 4], notes });
+    const metadata = {
+      id: 'volta-pickup-test',
+      title: 'Volta Pickup Test',
+      type: 'reel',
+      pickupBeats,
+      parts: [
+        { name: 'A', startMeasure: 1, bars: 2 },
+        { name: 'B', startMeasure: 3, bodyBars: 2, endings: [{ bars: 1 }, { bars: 1 }] },
+      ],
+    };
+
+    const tune = loadTune(metadata, midi);
+    const partB = tune.parts.find((p) => p.name === 'B');
+    const ending1Measure = tune.measures[partB.endings[0].measures[0]];
+    const ending2Measure = tune.measures[partB.endings[1].measures[0]];
+
+    const ending1Pickup = ending1Measure.notes.find((n) => n.isPickup);
+    const ending2Pickup = ending2Measure.notes.find((n) => n.isPickup);
+
+    expect(ending1Pickup).toBeDefined();
+    expect(ending1Pickup.midi).toBe(69);
+
+    expect(ending2Pickup).toBeDefined();
+    expect(ending2Pickup.midi).toBe(69);
+    expect(ending2Pickup.offsetTicks).toBe(ending1Pickup.offsetTicks);
+
+    // The ending's own downbeat note must still be there alongside the
+    // duplicated pickup, not overwritten by it.
+    expect(ending2Measure.notes.some((n) => n.midi === 71 && !n.isPickup)).toBe(true);
+  });
 });
