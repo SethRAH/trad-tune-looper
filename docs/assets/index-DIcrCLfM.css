@@ -63,6 +63,14 @@ body {
   margin: 0 auto;
   display: flex;
 }
+.tune-load-error {
+  background: var(--card-bg);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: var(--space-3) var(--space-4);
+  color: var(--accent);
+  font-size: 0.9rem;
+}
 tune-looper {
   background: var(--card-bg);
   border: 1px solid var(--border);
@@ -108,6 +116,11 @@ tune-looper {
   flex-basis: 100%;
   font-style: italic;
   display: flex;
+}
+.tl-attribution {
+  color: var(--muted);
+  margin-bottom: var(--space-3);
+  font-size: 0.8rem;
 }
 .tl-select-all-row {
   margin-bottom: var(--space-2);
@@ -181,6 +194,37 @@ tune-looper {
   border-style: dashed;
   flex: 0 0 0.75rem;
   min-width: 0.75rem;
+}
+.tl-part-frame,
+.tl-part-body {
+  gap: 2px;
+  display: flex;
+}
+.tl-part-endings {
+  flex-direction: column;
+  gap: 2px;
+  display: flex;
+}
+.tl-ending-row {
+  gap: 2px;
+  transition: opacity 0.2s;
+  display: flex;
+}
+.tl-ending-row--dim {
+  opacity: 0.4;
+}
+.tl-ending-row--live {
+  opacity: 1;
+}
+.tl-ending-label {
+  color: var(--muted);
+  font-size: 0.65rem;
+  position: absolute;
+  top: -0.9rem;
+  left: 0;
+}
+.tl-ending-cell--first {
+  position: relative;
 }
 .tl-transport {
   align-items: center;

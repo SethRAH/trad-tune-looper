@@ -10,6 +10,15 @@
   ],
 
   "hints": {
-    "key": "G"
+    "key": "G Ionian"
+  },
+
+  "attribution": {
+    "source": "The Session",
+    "sourceUrl": "https://thesession.org/tunes/55",
+    "license": "ODbl",
+    "licenseUrl": "https://opendatacommons.org/licenses/odbl/1.0/",
+    "contributor": "Jeremy",
+    "contributedDate": "2001-05-25"
   }
 }

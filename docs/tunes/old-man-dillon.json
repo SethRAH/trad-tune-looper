@@ -5,11 +5,23 @@
   "midi": "tunes/old-man-dillon.mid",
 
   "parts": [
-    { "name": "A", "startMeasure": 1, "bars": 8, "repeats": 2 },
-    { "name": "B", "startMeasure": 9, "bars": 8, "repeats": 2 }
+    {
+      "name": "A",
+      "startMeasure": 1,
+      "bodyBars": 7,
+      "repeats": 2,
+      "endings": [{ "bars": 1 }, { "bars": 1 }]
+    },
+    {
+      "name": "B",
+      "startMeasure": 10,
+      "bodyBars": 4,
+      "repeats": 2,
+      "endings": [{ "bars": 4 }, { "bars": 4 }]
+    }
   ],
 
   "hints": {
-    "key": "G"
+    "key": "A Dorian"
   }
 }

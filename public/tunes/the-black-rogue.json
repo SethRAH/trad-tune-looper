@@ -7,11 +7,23 @@
   "pickupBeats": 1,
 
   "parts": [
-    { "name": "A", "startMeasure": 1, "bars": 8, "repeats": 2 },
-    { "name": "B", "startMeasure": 9, "bars": 8, "repeats": 2 }
+    {
+      "name": "A",
+      "startMeasure": 1,
+      "bodyBars": 7,
+      "repeats": 2,
+      "endings": [{ "bars": 1 }, { "bars": 1 }]
+    },
+    {
+      "name": "B",
+      "startMeasure": 10,
+      "bodyBars": 7,
+      "repeats": 2,
+      "endings": [{ "bars": 1 }, { "bars": 1 }]
+    }
   ],
 
   "hints": {
-    "key": "D"
+    "key": "D Ionian"
   }
 }

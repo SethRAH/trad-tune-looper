@@ -13968,312 +13968,29 @@ function Tl() {
 }
 (ec().destination, ec().destination, ec().listener, ec().draw, ec());
 var El = 40,
-  Dl = 180;
-function Ol(e) {
-  return `flex: ${e.bars} 1 0`;
+  Dl = 180,
+  Ol = [`C`, `C#`, `D`, `D#`, `E`, `F`, `F#`, `G`, `G#`, `A`, `A#`, `B`];
+function kl(e) {
+  return Ol[((e % 12) + 12) % 12];
 }
-var kl = class extends HTMLElement {
-  #e = null;
-  #t = null;
-  #n = null;
-  #r = !1;
-  #i = !1;
-  #a = null;
-  #o = !1;
-  #s = !1;
-  #c = !0;
-  #l = !1;
-  #u = null;
-  #d = null;
-  #f = null;
-  #p = !0;
-  set tune(e) {
-    (this.#m(),
-      (this.#i = !1),
-      (this.#u = null),
-      (this.#e = e),
-      (this.#a = e.practiceTempo),
-      (this.#t = null),
-      (this.#n = null),
-      (this.#r = !1),
-      (this.#l = !1),
-      this.#E());
-  }
-  get tune() {
-    return this.#e;
-  }
-  connectedCallback() {
-    (this.addEventListener(`click`, this.#b),
-      this.addEventListener(`input`, this.#x),
-      this.#E());
-  }
-  disconnectedCallback() {
-    (this.removeEventListener(`click`, this.#b),
-      this.removeEventListener(`input`, this.#x),
-      this.#m());
-  }
-  play() {
-    (this.#m(),
-      (this.#i = !0),
-      (this.#p = !1),
-      this.dispatchEvent(
-        new CustomEvent(`tune-play`, { bubbles: !0, detail: { id: this.#e.id } }),
-      ),
-      this.#E(),
-      nc().then(() => {
-        this.#p || this.#h();
-      }));
-  }
-  stop() {
-    (this.#m(),
-      (this.#i = !1),
-      (this.#u = null),
-      this.dispatchEvent(
-        new CustomEvent(`tune-stop`, { bubbles: !0, detail: { id: this.#e.id } }),
-      ),
-      this.#E());
-  }
-  #m() {
-    this.#p = !0;
-    let e = Tl();
-    (e.stop(),
-      e.cancel(0),
-      (this.#d &&= (this.#d.dispose(), null)),
-      (this.#f &&= (this.#f.dispose(), null)));
-  }
-  #h() {
-    let e = this.#e,
-      t = Tl();
-    ((t.PPQ = e.ppq),
-      (t.bpm.value = this.#a),
-      (this.#d = new hl().toDestination()),
-      (this.#f = new gl().toDestination()));
-    let n = this.#t ?? 0,
-      r = this.#n ?? e.measures.length - 1,
-      i = this.#g(n, r),
-      a = 0;
-    (this.#c && (a = this.#y(a, !0)), this.#_(a, i, !0), t.start());
-  }
-  #g(e, t) {
-    if (!this.#r) {
-      let n = [];
-      for (let r = e; r <= t; r += 1) n.push(r);
-      return n;
-    }
-    let n = [];
-    for (let e of this.#e.parts) {
-      let t = [];
-      for (let n = e.startMeasure; n < e.startMeasure + e.bars; n += 1) t.push(n);
-      let r = e.repeats ?? 1;
-      for (let e = 0; e < r; e += 1) n.push(...t);
-    }
-    return n;
-  }
-  #_(e, t, n) {
-    let r = this.#v(e, t, n),
-      i = r;
-    this.#o && (i = this.#y(r, !1));
-    let a = this.#o;
-    Tl().scheduleOnce(
-      () => {
-        this.#p || this.#_(i, t, a);
-      },
-      `${e + 1}i`,
-    );
-  }
-  #v(e, t, n) {
-    let r = this.#e,
-      i = Tl();
-    return (
-      t.forEach((t, a) => {
-        let o = r.measures[t],
-          s = a === 0;
-        i.scheduleOnce(() => {
-          this.#p || ((this.#u = t), this.#E());
-        }, `${e}i`);
-        for (let t of o.notes)
-          (t.isPickup && s && n) ||
-            i.scheduleOnce(
-              (e) => {
-                if (this.#p) return;
-                let n = _c(t.midi, `midi`).toFrequency(),
-                  r = i.toSeconds(`${t.durTicks}i`);
-                this.#d.triggerAttackRelease(n, r, e);
-              },
-              `${e + t.offsetTicks}i`,
-            );
-        this.#s ? (e = this.#y(e, !1)) : (e += r.ticksPerMeasure);
-      }),
-      e
-    );
-  }
-  #y(e, t) {
-    let n = this.#e,
-      r = Tl();
-    for (let i = 0; i < n.tsNum; i += 1) {
-      let a = e + i * n.ticksPerBeat;
-      r.scheduleOnce((e) => {
-        if (this.#p || (!t && !this.#s)) return;
-        let n = i === 0 ? `C3` : `C2`;
-        this.#f.triggerAttackRelease(n, `32n`, e);
-      }, `${a}i`);
-    }
-    return e + n.ticksPerMeasure;
-  }
-  getState() {
-    return {
-      playing: this.#i,
-      selStart: this.#t,
-      selEnd: this.#n,
-      wholeTuneSelected: this.#r,
-      bpm: this.#a,
-      restBar: this.#o,
-      metronome: this.#s,
-      countIn: this.#c,
-    };
-  }
-  #b = (e) => {
-    let t = e.target.closest(`[data-measure-index]`),
-      n = e.target.closest(`[data-part-index]`),
-      r = e.target.closest(`.tl-select-all`),
-      i = e.target.closest(`.tl-play-btn`),
-      a = e.target.closest(`.tl-hint-toggle`);
-    t
-      ? this.#S(Number(t.dataset.measureIndex))
-      : n
-        ? this.#C(Number(n.dataset.partIndex))
-        : r
-          ? this.#w()
-          : i
-            ? this.#i
-              ? this.stop()
-              : this.play()
-            : a && ((this.#l = !this.#l), this.#E());
-  };
-  #x = (e) => {
-    e.target.matches(`.tl-tempo-slider`)
-      ? ((this.#a = Number(e.target.value)),
-        this.#i && (Tl().bpm.value = this.#a),
-        this.#E())
-      : e.target.matches(`.tl-rest-bar-toggle`)
-        ? (this.#o = e.target.checked)
-        : e.target.matches(`.tl-metronome-toggle`)
-          ? (this.#s = e.target.checked)
-          : e.target.matches(`.tl-count-in-toggle`) && (this.#c = e.target.checked);
-  };
-  #S(e) {
-    ((this.#r = !1),
-      this.#t === null || this.#n !== null
-        ? ((this.#t = e), (this.#n = null))
-        : ((this.#n = e), this.#n < this.#t && ([this.#t, this.#n] = [this.#n, this.#t])),
-      this.#E());
-  }
-  #C(e) {
-    this.#r = !1;
-    let t = this.#e.parts[e];
-    ((this.#t = t.startMeasure), (this.#n = t.startMeasure + t.bars - 1), this.#E());
-  }
-  #w() {
-    ((this.#t = 0), (this.#n = this.#e.measures.length - 1), (this.#r = !0), this.#E());
-  }
-  #T(e) {
-    return this.#t === null
-      ? ``
-      : this.#n === null
-        ? e === this.#t
-          ? `tl-cell--anchored`
-          : ``
-        : e >= this.#t && e <= this.#n
-          ? `tl-cell--selected`
-          : ``;
-  }
-  #E() {
-    let e = this.#e;
-    if (!e) {
-      this.innerHTML = ``;
-      return;
-    }
-    let t = e.parts.reduce((e, t) => e + t.bars, 0),
-      n =
-        e.downbeatTick > 0
-          ? `<span class="tl-cell tl-cell--pickup" aria-hidden="true"></span>`
-          : ``,
-      r = e.parts
-        .map(
-          (e, t) => `
-          <button type="button" class="tl-part" data-part-index="${t}" style="${Ol(e)}">
-            ${e.name}
-          </button>`,
-        )
-        .join(``),
-      i = e.measures
-        .map((e) => {
-          let t = e.index === this.#u ? `tl-cell--current` : ``;
-          return `
-          <button type="button" class="tl-cell ${this.#T(e.index)} ${t}"
-                  data-measure-index="${e.index}">
-            ${e.index + 1}
-          </button>`;
-        })
-        .join(``),
-      a = this.#l
-        ? `<div class="tl-hints">
-           ${e.hints.key ? `<span class="tl-hint-key">Key: ${e.hints.key}</span>` : ``}
-           ${e.hints.startingNote ? `<span class="tl-hint-start">Starts on ${e.hints.startingNote}</span>` : ``}
-         </div>`
-        : ``;
-    this.innerHTML = `
-      <div class="tl-header">
-        <span class="tl-title">${e.title}</span>
-        <span class="tl-type">${e.type}</span>
-        <span class="tl-timesig">${e.tsNum}/${e.tsDen}</span>
-        <span class="tl-barcount">${t} bars</span>
-        <button type="button" class="tl-hint-toggle" aria-pressed="${this.#l}">?</button>
-        ${a}
-      </div>
-      <div class="tl-select-all-row">
-        <button type="button" class="tl-select-all">Whole Tune</button>
-      </div>
-      <div class="tl-parts">
-        ${n}
-        ${r}
-      </div>
-      <div class="tl-grid">
-        ${n}
-        ${i}
-      </div>
-      <div class="tl-transport">
-        <button type="button" class="tl-play-btn">${this.#i ? `Stop` : `Play`}</button>
-        <input type="range" class="tl-tempo-slider" min="${El}" max="${Dl}" value="${this.#a}" />
-        <span class="tl-tempo-readout">${this.#a} bpm</span>
-      </div>
-      <div class="tl-toggles">
-        <label><input type="checkbox" class="tl-rest-bar-toggle" ${this.#o ? `checked` : ``} /> Rest bar</label>
-        <label><input type="checkbox" class="tl-metronome-toggle" ${this.#s ? `checked` : ``} /> Metronome</label>
-        <label><input type="checkbox" class="tl-count-in-toggle" ${this.#c ? `checked` : ``} /> Count-in</label>
-      </div>
-    `;
-  }
-};
-customElements.define(`tune-looper`, kl);
-var Al = 40,
-  jl = 180,
-  Ml = [`C`, `C#`, `D`, `D#`, `E`, `F`, `F#`, `G`, `G#`, `A`, `A#`, `B`];
-function Nl(e) {
-  return Ml[((e % 12) + 12) % 12];
-}
-function Pl(e, t, n) {
+function Al(e, t, n) {
   return Math.min(n, Math.max(t, e));
 }
-function Fl(e) {
+function jl(e) {
   return e.reduce((e, t) => (t.notes.length > e.notes.length ? t : e));
 }
-function Il(e, t) {
+function Ml(e) {
+  return e.endings ? e.bodyBars + e.endings.reduce((e, t) => e + t.bars, 0) : e.bars;
+}
+function Nl(e, t) {
+  return Array.from({ length: t }, (t, n) => e + n);
+}
+function Pl(e, t) {
   let { header: n } = t,
     r = n.ppq,
     [i, a] = e.timeSignatureOverride ?? n.timeSignatures[0].timeSignature,
     o = n.tempos[0].bpm,
-    s = Fl(t.tracks),
+    s = jl(t.tracks),
     c = (r * 4) / a,
     l = (r * 4 * i) / a,
     u = (e.pickupBeats ?? 0) * c,
@@ -14305,28 +14022,47 @@ function Il(e, t) {
       n > m && (m = n),
       !i && (h === null || t < h.tick) && (h = { tick: t, midi: e.midi }));
   }
-  let g = m + 1;
+  let g = m + 1,
+    _ = `Tune "${e.id}"`;
+  for (let t of e.parts)
+    if (t.endings) {
+      if (t.endings.length !== 2)
+        throw Error(
+          `${_}: Part "${t.name}" must have exactly two endings (1st/2nd), got ${t.endings.length}`,
+        );
+      if (!(t.bodyBars > 0))
+        throw Error(
+          `${_}: Part "${t.name}" bodyBars must be a positive number of bars, got ${t.bodyBars}`,
+        );
+      for (let [e, n] of t.endings.entries())
+        if (!(n.bars > 0))
+          throw Error(
+            `${_}: Part "${t.name}" ending ${e + 1} bars must be a positive number of bars, got ${n.bars}`,
+          );
+    }
   for (let t of e.parts)
     if (t.startMeasure < 1 || t.startMeasure > g)
       throw Error(
-        `Part "${t.name}" startMeasure ${t.startMeasure} is out of range (1..${g})`,
+        `${_}: Part "${t.name}" startMeasure ${t.startMeasure} is out of range (1..${g})`,
       );
   for (let t = 1; t < e.parts.length; t += 1) {
     let n = e.parts[t - 1],
       r = e.parts[t],
-      i = n.startMeasure + n.bars;
+      i = n.startMeasure + Ml(n);
     if (r.startMeasure !== i)
       throw Error(
-        `Part "${r.name}" startMeasure ${r.startMeasure} does not follow "${n.name}" (expected ${i})`,
+        `${_}: Part "${r.name}" startMeasure ${r.startMeasure} does not follow "${n.name}" (expected ${i})`,
       );
   }
-  let _ = e.parts.reduce((e, t) => e + t.bars, 0);
-  if (_ !== g)
-    throw Error(`Sum of part bars (${_}) does not match total full measures (${g})`);
+  let v = e.parts.reduce((e, t) => e + Ml(t), 0);
+  if (v !== g)
+    throw Error(
+      `${_}: Sum of part bars (${v}) does not match total full measures (${g})`,
+    );
   for (let e = 0; e < g; e += 1) p(e);
-  let v = Array.from(f.values()).sort((e, t) => e.index - t.index),
-    y = e.practiceTempo ?? Pl(Math.round(o * 0.7), Al, jl),
-    b = h ? Nl(h.midi) : null;
+  let y = Array.from(f.values()).sort((e, t) => e.index - t.index),
+    b = e.practiceTempo ?? Al(Math.round(o * 0.7), El, Dl),
+    x = h ? kl(h.midi) : null;
   return {
     id: e.id,
     title: e.title,
@@ -14338,36 +14074,505 @@ function Il(e, t) {
     ticksPerMeasure: l,
     downbeatTick: u,
     midiTempo: o,
-    practiceTempo: y,
-    measures: v,
-    parts: e.parts.map((e) => ({ ...e, startMeasure: e.startMeasure - 1 })),
-    hints: { key: e.hints?.key ?? null, startingNote: b },
-    source: e.source ?? null,
+    practiceTempo: b,
+    measures: y,
+    parts: e.parts.map((e) => {
+      let t = e.startMeasure - 1;
+      if (!e.endings) return { ...e, startMeasure: t };
+      let n = Nl(t, e.bodyBars),
+        r = t + e.bodyBars,
+        i = e.endings.map((e) => {
+          let t = Nl(r, e.bars);
+          return ((r += e.bars), { bars: e.bars, measures: t });
+        }),
+        [a, o] = i,
+        s = y[a.measures[0]].notes.filter((e) => e.isPickup);
+      return (
+        s.length > 0 && y[o.measures[0]].notes.push(...s.map((e) => ({ ...e }))),
+        {
+          name: e.name,
+          startMeasure: t,
+          repeats: e.repeats,
+          bodyBars: e.bodyBars,
+          bodyMeasures: n,
+          endings: i,
+        }
+      );
+    }),
+    hints: { key: e.hints?.key ?? null, startingNote: x },
+    attribution: e.attribution ?? null,
   };
 }
-function Ll(e = document) {
+var Fl = 40,
+  Il = 180;
+function Ll(e) {
+  return `flex: ${Ml(e)} 1 0`;
+}
+function Rl(e, t) {
+  for (let n of e.parts)
+    if (n.endings) {
+      for (let e = 0; e < n.endings.length; e += 1)
+        if (n.endings[e].measures.includes(t)) return { part: n, endingIndex: e };
+    }
+  return null;
+}
+function zl(e, t) {
+  for (let n of e.parts)
+    if (n.endings) {
+      if (n.bodyMeasures.includes(t) || n.endings.some((e) => e.measures.includes(t)))
+        return n;
+    } else if (t >= n.startMeasure && t < n.startMeasure + n.bars) return n;
+  return null;
+}
+var Bl = class extends HTMLElement {
+  #e = null;
+  #t = null;
+  #n = null;
+  #r = !1;
+  #i = null;
+  #a = !1;
+  #o = null;
+  #s = !1;
+  #c = !1;
+  #l = !0;
+  #u = !1;
+  #d = null;
+  #f = null;
+  #p = null;
+  #m = !0;
+  set tune(e) {
+    (this.#h(),
+      (this.#a = !1),
+      (this.#d = null),
+      (this.#e = e),
+      (this.#o = e.practiceTempo),
+      this.#O(null, null, !1),
+      (this.#u = !1),
+      this.#F());
+  }
+  get tune() {
+    return this.#e;
+  }
+  connectedCallback() {
+    (this.addEventListener(`click`, this.#E),
+      this.addEventListener(`input`, this.#D),
+      this.#F());
+  }
+  disconnectedCallback() {
+    (this.removeEventListener(`click`, this.#E),
+      this.removeEventListener(`input`, this.#D),
+      this.#h());
+  }
+  play() {
+    (this.#h(),
+      (this.#a = !0),
+      (this.#m = !1),
+      this.dispatchEvent(
+        new CustomEvent(`tune-play`, { bubbles: !0, detail: { id: this.#e.id } }),
+      ),
+      this.#F(),
+      nc().then(() => {
+        this.#m || this.#g();
+      }));
+  }
+  stop() {
+    (this.#h(),
+      (this.#a = !1),
+      (this.#d = null),
+      this.dispatchEvent(
+        new CustomEvent(`tune-stop`, { bubbles: !0, detail: { id: this.#e.id } }),
+      ),
+      this.#F());
+  }
+  #h() {
+    this.#m = !0;
+    let e = Tl();
+    (e.stop(),
+      e.cancel(0),
+      (this.#f &&= (this.#f.dispose(), null)),
+      (this.#p &&= (this.#p.dispose(), null)));
+  }
+  #g() {
+    let e = this.#e,
+      t = Tl();
+    ((t.PPQ = e.ppq),
+      (t.bpm.value = this.#o),
+      (this.#f = new hl().toDestination()),
+      (this.#p = new gl().toDestination()));
+    let n = this.#t ?? 0,
+      r = this.#n ?? e.measures.length - 1,
+      i = this.#S(n, r),
+      a = 0;
+    (this.#l && (a = this.#T(a, !0)), this.#C(a, i, !0), t.start());
+  }
+  #_(e) {
+    if (!e.endings) {
+      let t = [];
+      for (let n = e.startMeasure; n < e.startMeasure + e.bars; n += 1) t.push(n);
+      let n = e.repeats ?? 1,
+        r = [];
+      for (let e = 0; e < n; e += 1) r.push(...t);
+      return r;
+    }
+    return [
+      ...e.bodyMeasures,
+      ...e.endings[0].measures,
+      ...e.bodyMeasures,
+      ...e.endings[1].measures,
+    ];
+  }
+  #v() {
+    let e = [];
+    for (let t of this.#e.parts) e.push(...this.#_(t));
+    return e;
+  }
+  #y(e) {
+    return this.#_(e);
+  }
+  #b(e) {
+    return [...e.endings[0].measures, ...e.endings[1].measures];
+  }
+  #x(e, t, n) {
+    let { part: r, endingIndex: i } = n,
+      a = Rl(this.#e, t);
+    if (!a) {
+      let n = [];
+      for (let r = e; r <= t; r += 1) n.push(r);
+      return n;
+    }
+    let o = a.part.endings[a.endingIndex].measures.indexOf(t),
+      s = r.endings[i].measures.slice(0, o + 1),
+      c = r.bodyMeasures[r.bodyMeasures.length - 1],
+      l = [];
+    for (let t = e; t <= c; t += 1) l.push(t);
+    return (l.push(...s), l);
+  }
+  #S(e, t) {
+    if (this.#r || this.#t === null) return this.#v();
+    let n = this.#N();
+    switch (n.kind) {
+      case `full-part`:
+        return this.#y(n.part);
+      case `endings-only`:
+        return this.#b(n.part);
+      case `fragment-wrap`:
+        return this.#x(e, t, n);
+      default: {
+        let n = [];
+        for (let r = e; r <= t; r += 1) n.push(r);
+        return n;
+      }
+    }
+  }
+  #C(e, t, n) {
+    let r = this.#w(e, t, n),
+      i = r;
+    this.#s && (i = this.#T(r, !1));
+    let a = this.#s;
+    Tl().scheduleOnce(
+      () => {
+        this.#m || this.#C(i, t, a);
+      },
+      `${e + 1}i`,
+    );
+  }
+  #w(e, t, n) {
+    let r = this.#e,
+      i = Tl();
+    return (
+      t.forEach((t, a) => {
+        let o = r.measures[t],
+          s = a === 0;
+        i.scheduleOnce(() => {
+          this.#m || ((this.#d = t), this.#F());
+        }, `${e}i`);
+        for (let t of o.notes)
+          (t.isPickup && s && n) ||
+            i.scheduleOnce(
+              (e) => {
+                if (this.#m) return;
+                let n = _c(t.midi, `midi`).toFrequency(),
+                  r = i.toSeconds(`${t.durTicks}i`);
+                this.#f.triggerAttackRelease(n, r, e);
+              },
+              `${e + t.offsetTicks}i`,
+            );
+        this.#c ? (e = this.#T(e, !1)) : (e += r.ticksPerMeasure);
+      }),
+      e
+    );
+  }
+  #T(e, t) {
+    let n = this.#e,
+      r = Tl();
+    for (let i = 0; i < n.tsNum; i += 1) {
+      let a = e + i * n.ticksPerBeat;
+      r.scheduleOnce((e) => {
+        if (this.#m || (!t && !this.#c)) return;
+        let n = i === 0 ? `C3` : `C2`;
+        this.#p.triggerAttackRelease(n, `32n`, e);
+      }, `${a}i`);
+    }
+    return e + n.ticksPerMeasure;
+  }
+  getState() {
+    return {
+      playing: this.#a,
+      selStart: this.#t,
+      selEnd: this.#n,
+      wholeTuneSelected: this.#r,
+      bpm: this.#o,
+      restBar: this.#s,
+      metronome: this.#c,
+      countIn: this.#l,
+    };
+  }
+  #E = (e) => {
+    let t = e.target.closest(`[data-measure-index]`),
+      n = e.target.closest(`[data-part-index]`),
+      r = e.target.closest(`.tl-select-all`),
+      i = e.target.closest(`.tl-play-btn`),
+      a = e.target.closest(`.tl-hint-toggle`);
+    t
+      ? this.#k(Number(t.dataset.measureIndex), t.dataset.endingRole)
+      : n
+        ? this.#A(Number(n.dataset.partIndex))
+        : r
+          ? this.#j()
+          : i
+            ? this.#a
+              ? this.stop()
+              : this.play()
+            : a && ((this.#u = !this.#u), this.#F());
+  };
+  #D = (e) => {
+    e.target.matches(`.tl-tempo-slider`)
+      ? ((this.#o = Number(e.target.value)),
+        this.#a && (Tl().bpm.value = this.#o),
+        this.#F())
+      : e.target.matches(`.tl-rest-bar-toggle`)
+        ? (this.#s = e.target.checked)
+        : e.target.matches(`.tl-metronome-toggle`)
+          ? (this.#c = e.target.checked)
+          : e.target.matches(`.tl-count-in-toggle`) && (this.#l = e.target.checked);
+  };
+  #O(e, t, n, r = null) {
+    ((this.#t = e), (this.#n = t), (this.#r = n), (this.#i = r));
+  }
+  #k(e, t) {
+    let n = t ? Number(t) : null;
+    if (this.#t === null || this.#n !== null) this.#O(e, null, !1, n);
+    else {
+      let [t, r] = [this.#t, e];
+      (r < t && ([t, r] = [r, t]), this.#O(t, r, !1, n));
+    }
+    this.#F();
+  }
+  #A(e) {
+    let t = this.#e.parts[e];
+    (this.#O(t.startMeasure, t.startMeasure + Ml(t) - 1, !1), this.#F());
+  }
+  #j() {
+    (this.#O(0, this.#e.measures.length - 1, !0), this.#F());
+  }
+  #M() {
+    if (this.#t === null || this.#n === null) return null;
+    for (let e of this.#e.parts) {
+      if (!e.endings) continue;
+      let t = Ml(e);
+      if (this.#t === e.startMeasure && this.#n === e.startMeasure + t - 1) return e;
+    }
+    return null;
+  }
+  #N() {
+    if (this.#t === null || this.#n === null) return { kind: `plain` };
+    let e = this.#M();
+    if (e) return { kind: `full-part`, part: e };
+    let t = Rl(this.#e, this.#n);
+    if (!t) return { kind: `plain` };
+    let n = Rl(this.#e, this.#t);
+    if (n && n.part === t.part)
+      return n.endingIndex === t.endingIndex
+        ? { kind: `plain` }
+        : { kind: `endings-only`, part: t.part };
+    if (this.#i !== null)
+      return {
+        kind: `fragment-wrap`,
+        part: t.part,
+        endingIndex: this.#i - 1,
+        override: !0,
+      };
+    let r = zl(this.#e, this.#t) === t.part;
+    return { kind: `fragment-wrap`, part: t.part, endingIndex: +!r, override: !1 };
+  }
+  #P(e) {
+    return this.#t === null
+      ? ``
+      : this.#n === null
+        ? e === this.#t
+          ? `tl-cell--anchored`
+          : ``
+        : e >= this.#t && e <= this.#n
+          ? `tl-cell--selected`
+          : ``;
+  }
+  #F() {
+    let e = this.#e;
+    if (!e) {
+      this.innerHTML = ``;
+      return;
+    }
+    let t = e.parts.reduce((e, t) => e + Ml(t), 0),
+      n = this.#r
+        ? `${e.parts.reduce((e, t) => e + Ml(t) * (t.repeats ?? 1), 0)} bars with repeats`
+        : `${t} bars`,
+      r =
+        e.downbeatTick > 0
+          ? `<span class="tl-cell tl-cell--pickup" aria-hidden="true"></span>`
+          : ``,
+      i = e.parts
+        .map(
+          (e, t) => `
+          <button type="button" class="tl-part" data-part-index="${t}" style="${Ll(e)}">
+            ${e.name}
+          </button>`,
+        )
+        .join(``),
+      a = (e, t, n = {}) => {
+        let r = e === this.#d ? `tl-cell--current` : ``,
+          i = n.isFirst ? `tl-ending-cell--first` : ``,
+          a = n.endingRole ? ` data-ending-role="${n.endingRole}"` : ``,
+          o = n.isFirst
+            ? `<span class="tl-ending-label">${n.endingRole === 1 ? `1st` : `2nd`}</span>`
+            : ``;
+        return `
+        <button type="button" class="tl-cell ${this.#P(e)} ${r} ${i}"
+                data-measure-index="${e}"${a}>
+          ${o}${t}
+        </button>`;
+      },
+      o = this.#N(),
+      s = (e) => (o.kind !== `fragment-wrap` || o.part !== e ? null : o.endingIndex),
+      c = 1,
+      l = e.parts
+        .map((e) => {
+          if (!e.endings) {
+            let t = [];
+            for (let n = e.startMeasure; n < e.startMeasure + e.bars; n += 1)
+              (t.push(a(n, c)), (c += 1));
+            return t.join(``);
+          }
+          let t = s(e),
+            n = (e) =>
+              t === null ? `` : t === e ? `tl-ending-row--live` : `tl-ending-row--dim`,
+            r = e.bodyMeasures
+              .map((e) => {
+                let t = a(e, c);
+                return ((c += 1), t);
+              })
+              .join(``),
+            i = c,
+            o = Math.max(...e.endings.map((e) => e.bars)),
+            l = e.endings
+              .map((e, t) => {
+                let r = e.measures
+                  .map((e, n) => a(e, i + n, { endingRole: t + 1, isFirst: n === 0 }))
+                  .join(``);
+                return `
+              <div class="tl-ending-row ${n(t)}" style="flex: ${e.bars} 1 0">
+                ${r}
+              </div>`;
+              })
+              .join(``);
+          return (
+            (c = i + o),
+            `
+          <div class="tl-part-frame" style="flex: ${e.bodyBars + o} 1 0">
+            <div class="tl-part-body" style="flex: ${e.bodyBars} 1 0">${r}</div>
+            <div class="tl-part-endings" style="flex: ${o} 1 0">${l}</div>
+          </div>`
+          );
+        })
+        .join(``),
+      u = this.#u
+        ? `<div class="tl-hints">
+           ${e.hints.key ? `<span class="tl-hint-key">Key: ${e.hints.key}</span>` : ``}
+           ${e.hints.startingNote ? `<span class="tl-hint-start">Starts on ${e.hints.startingNote}</span>` : ``}
+         </div>`
+        : ``,
+      d = e.attribution
+        ? `<div class="tl-attribution">
+           Contains information from <a href="${e.attribution.sourceUrl}" target="_blank" rel="noopener">${e.attribution.source}</a>,
+           which is made available here under the Open Database License
+           (<a href="${e.attribution.licenseUrl}" target="_blank" rel="noopener">${e.attribution.license}</a>).
+           ${e.attribution.contributor ? `Added by ${e.attribution.contributor}${e.attribution.contributedDate ? ` on ${e.attribution.contributedDate}` : ``}.` : ``}
+         </div>`
+        : ``;
+    this.innerHTML = `
+      <div class="tl-header">
+        <span class="tl-title">${e.title}</span>
+        <span class="tl-type">${e.type}</span>
+        <span class="tl-timesig">${e.tsNum}/${e.tsDen}</span>
+        <span class="tl-barcount">${n}</span>
+        <button type="button" class="tl-hint-toggle" aria-pressed="${this.#u}">?</button>
+        ${u}
+      </div>
+      ${d}
+      <div class="tl-select-all-row">
+        <button type="button" class="tl-select-all">Whole Tune</button>
+      </div>
+      <div class="tl-parts">
+        ${r}
+        ${i}
+      </div>
+      <div class="tl-grid">
+        ${r}
+        ${l}
+      </div>
+      <div class="tl-transport">
+        <button type="button" class="tl-play-btn">${this.#a ? `Stop` : `Play`}</button>
+        <input type="range" class="tl-tempo-slider" min="${Fl}" max="${Il}" value="${this.#o}" />
+        <span class="tl-tempo-readout">${this.#o} bpm</span>
+      </div>
+      <div class="tl-toggles">
+        <label><input type="checkbox" class="tl-rest-bar-toggle" ${this.#s ? `checked` : ``} /> Rest bar</label>
+        <label><input type="checkbox" class="tl-metronome-toggle" ${this.#c ? `checked` : ``} /> Metronome</label>
+        <label><input type="checkbox" class="tl-count-in-toggle" ${this.#l ? `checked` : ``} /> Count-in</label>
+      </div>
+    `;
+  }
+};
+customElements.define(`tune-looper`, Bl);
+function Vl(e = document) {
   e.addEventListener(`tune-play`, (t) => {
     e.querySelectorAll(`tune-looper`).forEach((e) => {
       e !== t.target && e.stop();
     });
   });
 }
-async function Rl(e) {
+async function Hl(e) {
   let [t, n] = await Promise.all([
     fetch(`tunes/${e}.json`).then((e) => e.json()),
     fetch(`tunes/${e}.mid`).then((e) => e.arrayBuffer()),
   ]);
-  return Il(t, new w.Midi(n));
+  return Pl(t, new w.Midi(n));
 }
-async function zl() {
+async function Ul() {
   let e = await fetch(`tunes/manifest.json`).then((e) => e.json());
   document.querySelector(`#session-title`).textContent = e.session;
   let t = document.querySelector(`#tunes`);
-  for (let n of e.tunes) {
-    let e = await Rl(n),
-      r = document.createElement(`tune-looper`);
-    ((r.tune = e), t.appendChild(r));
-  }
-  Ll(document);
+  for (let n of e.tunes)
+    try {
+      let e = await Hl(n),
+        r = document.createElement(`tune-looper`);
+      ((r.tune = e), t.appendChild(r));
+    } catch (e) {
+      console.error(`Failed to load tune "${n}":`, e);
+      let r = document.createElement(`div`);
+      ((r.className = `tune-load-error`),
+        (r.textContent = `Couldn't load "${n}": ${e.message}`),
+        t.appendChild(r));
+    }
+  Vl(document);
 }
-zl();
+Ul();
