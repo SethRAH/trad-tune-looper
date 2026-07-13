@@ -1,0 +1,36 @@
+{
+  "id": "palm-sunday",
+  "title": "Palm Sunday",
+  "type": "jig",
+  "midi": "tunes/palm-sunday.mid",
+  "timeSignatureOverride": [6, 8],
+  "pickupBeats": 1,
+
+  "parts": [
+    {
+      "name": "A",
+      "startMeasure": 1,
+      "bodyBars": 7,
+      "repeats": 2,
+      "endings": [{ "bars": 1 }, { "bars": 1 }]
+    },
+    {
+      "name": "B",
+      "startMeasure": 10,
+      "bars": 8,
+      "repeats": 2
+    }
+  ],
+
+  "hints": {
+    "key": "A Dorian"
+  },
+
+  "attribution": {
+    "source": "book",
+    "sourceTitle": "300 Gems of Irish Music for All Instruments",
+    "contributor": "Grey Larsen",
+    "license": "used-with-permission",
+    "permissionScope": "site-only"
+  }
+}

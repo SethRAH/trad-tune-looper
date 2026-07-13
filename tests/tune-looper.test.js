@@ -190,9 +190,15 @@ describe('<tune-looper> voltas', () => {
     expect(el.querySelectorAll('.tl-ending-row')).toHaveLength(2);
     expect(el.querySelectorAll('.tl-ending-row [data-measure-index]')).toHaveLength(2);
 
-    // Part A (plain, no endings) still renders as flat cells with no frame.
+    // Part A (plain, no endings) is still wrapped in a .tl-part-frame (so
+    // every part contributes exactly one flex item at the grid's top level,
+    // keeping it aligned with its header button — see tune-looper.js), but
+    // that frame has no body/endings sub-structure, just flat cells.
     const aCell = el.querySelector('[data-measure-index="0"]');
-    expect(aCell.closest('.tl-part-frame')).toBeNull();
+    const aFrame = aCell.closest('.tl-part-frame');
+    expect(aFrame).not.toBeNull();
+    expect(aFrame.querySelector('.tl-part-body')).toBeNull();
+    expect(aFrame.querySelector('.tl-part-endings')).toBeNull();
   });
 
   it('labels cells by a running as-played position, with both endings sharing the same number', () => {

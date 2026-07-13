@@ -191,6 +191,7 @@ tune-looper {
   flex: 1 1 0;
   min-width: 2rem;
   height: 2rem;
+  padding: 0;
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--fg);
@@ -230,22 +231,26 @@ tune-looper {
 .tl-part-frame {
   display: flex;
   gap: 2px;
+  min-width: 0;
 }
 
 .tl-part-body {
   display: flex;
   gap: 2px;
+  min-width: 0;
 }
 
 .tl-part-endings {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 
 .tl-ending-row {
   display: flex;
   gap: 2px;
+  min-width: 0;
   transition: opacity 0.2s ease;
 }
 

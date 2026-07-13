@@ -14465,7 +14465,7 @@ var Vl = class extends HTMLElement {
             let t = [];
             for (let n = e.startMeasure; n < e.startMeasure + e.bars; n += 1)
               (t.push(a(n, c)), (c += 1));
-            return t.join(``);
+            return `<div class="tl-part-frame" style="flex: ${Ll(e)} 1 0">${t.join(``)}</div>`;
           }
           let t = s(e),
             n = (e) =>
@@ -14506,12 +14506,16 @@ var Vl = class extends HTMLElement {
          </div>`
         : ``,
       d = e.attribution
-        ? `<div class="tl-attribution">
-           Contains information from <a href="${e.attribution.sourceUrl}" target="_blank" rel="noopener">${e.attribution.source}</a>,
-           which is made available here under the Open Database License
-           (<a href="${e.attribution.licenseUrl}" target="_blank" rel="noopener">${e.attribution.license}</a>).
-           ${e.attribution.contributor ? `Added by ${e.attribution.contributor}${e.attribution.contributedDate ? ` on ${e.attribution.contributedDate}` : ``}.` : ``}
-         </div>`
+        ? e.attribution.sourceUrl
+          ? `<div class="tl-attribution">
+             Contains information from <a href="${e.attribution.sourceUrl}" target="_blank" rel="noopener">${e.attribution.source}</a>,
+             which is made available here under the Open Database License
+             (<a href="${e.attribution.licenseUrl}" target="_blank" rel="noopener">${e.attribution.license}</a>).
+             ${e.attribution.contributor ? `Added by ${e.attribution.contributor}${e.attribution.contributedDate ? ` on ${e.attribution.contributedDate}` : ``}.` : ``}
+           </div>`
+          : `<div class="tl-attribution">
+             Transcribed from <em>${e.attribution.sourceTitle ?? e.attribution.source}</em>${e.attribution.contributor ? ` by ${e.attribution.contributor}` : ``}. Used with permission${e.attribution.permissionScope === `site-only` ? ` for this site only` : ``}.
+           </div>`
         : ``;
     this.innerHTML = `
       <div class="tl-header">

@@ -553,7 +553,16 @@ export class TuneLooper extends HTMLElement {
             cells.push(renderCell(m, displayCounter));
             displayCounter += 1;
           }
-          return cells.join('');
+          // Wrapped in a frame div (rather than emitted as bare siblings of
+          // .tl-grid) so every part contributes exactly one flex item at the
+          // grid's top level, matching the header row's one-button-per-part
+          // structure. Without this, a browser quirk where a <button>'s
+          // intrinsic border-derived size fights its flex min-width (only
+          // when the button is a *direct* flex child) drifts this part's
+          // rendered width away from its header button's width — invisible
+          // as long as every part in a tune has the same shape (all flat or
+          // all endings), but visible the moment they differ.
+          return `<div class="tl-part-frame" style="flex: ${partVisualWidth(part)} 1 0">${cells.join('')}</div>`;
         }
 
         const live = liveEndingFor(part);
