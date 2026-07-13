@@ -73,7 +73,8 @@ produce a `NormalizedTune`. One `<tune-looper>` custom element
 `tests/tune-looper.test.js` fully mocks `tone` (see the comment at the top
 of that file) — it only verifies selection/render/event-wiring logic, not
 real Transport scheduling. `tests/midi-loader.test.js` covers the
-audio-agnostic pickup-rule logic directly. For changes to the actual
+audio-agnostic pickup-rule logic directly. `tests/coordinator.test.js`
+covers the solo-playback stop-all-others logic. For changes to the actual
 playback/scheduling path, use the `verifier-tune-looper` skill (drives a
 real headless Chromium via Playwright) rather than trusting Vitest alone.
 
@@ -84,3 +85,6 @@ real headless Chromium via Playwright) rather than trusting Vitest alone.
   put hand-authored files there; PRDs/planning docs live in `planning/`.
 - Vitest for tests (`tests/*.test.js`), ESLint + Prettier for lint/format,
   enforced via a Husky pre-commit hook.
+- CI (`.github/workflows/ci.yml`) runs `npm ci`, `lint`, `test`, and `build`
+  on every push to `main` and every PR — mirror that sequence locally
+  before pushing.
