@@ -23,5 +23,13 @@
 
   "hints": {
     "key": "A Dorian"
+  },
+
+  "attribution": {
+    "source": "book",
+    "sourceTitle": "300 Gems of Irish Music for All Instruments",
+    "contributor": "Grey Larsen",
+    "license": "used-with-permission",
+    "permissionScope": "site-only"
   }
 }

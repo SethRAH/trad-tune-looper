@@ -14106,9 +14106,12 @@ function Pl(e, t) {
 var Fl = 40,
   Il = 180;
 function Ll(e) {
-  return `flex: ${Ml(e)} 1 0`;
+  return e.endings ? e.bodyBars + Math.max(...e.endings.map((e) => e.bars)) : e.bars;
 }
-function Rl(e, t) {
+function Rl(e) {
+  return `flex: ${Ll(e)} 1 0`;
+}
+function zl(e, t) {
   for (let n of e.parts)
     if (n.endings) {
       for (let e = 0; e < n.endings.length; e += 1)
@@ -14116,7 +14119,7 @@ function Rl(e, t) {
     }
   return null;
 }
-function zl(e, t) {
+function Bl(e, t) {
   for (let n of e.parts)
     if (n.endings) {
       if (n.bodyMeasures.includes(t) || n.endings.some((e) => e.measures.includes(t)))
@@ -14124,7 +14127,7 @@ function zl(e, t) {
     } else if (t >= n.startMeasure && t < n.startMeasure + n.bars) return n;
   return null;
 }
-var Bl = class extends HTMLElement {
+var Vl = class extends HTMLElement {
   #e = null;
   #t = null;
   #n = null;
@@ -14203,7 +14206,9 @@ var Bl = class extends HTMLElement {
       r = this.#n ?? e.measures.length - 1,
       i = this.#S(n, r),
       a = 0;
-    (this.#l && (a = this.#T(a, !0)), this.#C(a, i, !0), t.start());
+    this.#l && (a = this.#T(a, !0));
+    let o = i[0] !== 0;
+    (o || (a = Math.max(a, e.downbeatTick)), this.#C(a, i, o), t.start());
   }
   #_(e) {
     if (!e.endings) {
@@ -14234,7 +14239,7 @@ var Bl = class extends HTMLElement {
   }
   #x(e, t, n) {
     let { part: r, endingIndex: i } = n,
-      a = Rl(this.#e, t);
+      a = zl(this.#e, t);
     if (!a) {
       let n = [];
       for (let r = e; r <= t; r += 1) n.push(r);
@@ -14388,9 +14393,9 @@ var Bl = class extends HTMLElement {
     if (this.#t === null || this.#n === null) return { kind: `plain` };
     let e = this.#M();
     if (e) return { kind: `full-part`, part: e };
-    let t = Rl(this.#e, this.#n);
+    let t = zl(this.#e, this.#n);
     if (!t) return { kind: `plain` };
-    let n = Rl(this.#e, this.#t);
+    let n = zl(this.#e, this.#t);
     if (n && n.part === t.part)
       return n.endingIndex === t.endingIndex
         ? { kind: `plain` }
@@ -14402,7 +14407,7 @@ var Bl = class extends HTMLElement {
         endingIndex: this.#i - 1,
         override: !0,
       };
-    let r = zl(this.#e, this.#t) === t.part;
+    let r = Bl(this.#e, this.#t) === t.part;
     return { kind: `fragment-wrap`, part: t.part, endingIndex: +!r, override: !1 };
   }
   #P(e) {
@@ -14433,7 +14438,7 @@ var Bl = class extends HTMLElement {
       i = e.parts
         .map(
           (e, t) => `
-          <button type="button" class="tl-part" data-part-index="${t}" style="${Ll(e)}">
+          <button type="button" class="tl-part" data-part-index="${t}" style="${Rl(e)}">
             ${e.name}
           </button>`,
         )
@@ -14487,7 +14492,7 @@ var Bl = class extends HTMLElement {
           return (
             (c = i + o),
             `
-          <div class="tl-part-frame" style="flex: ${e.bodyBars + o} 1 0">
+          <div class="tl-part-frame" style="flex: ${Ll(e)} 1 0">
             <div class="tl-part-body" style="flex: ${e.bodyBars} 1 0">${r}</div>
             <div class="tl-part-endings" style="flex: ${o} 1 0">${l}</div>
           </div>`
@@ -14542,28 +14547,28 @@ var Bl = class extends HTMLElement {
     `;
   }
 };
-customElements.define(`tune-looper`, Bl);
-function Vl(e = document) {
+customElements.define(`tune-looper`, Vl);
+function Hl(e = document) {
   e.addEventListener(`tune-play`, (t) => {
     e.querySelectorAll(`tune-looper`).forEach((e) => {
       e !== t.target && e.stop();
     });
   });
 }
-async function Hl(e) {
+async function Ul(e) {
   let [t, n] = await Promise.all([
     fetch(`tunes/${e}.json`).then((e) => e.json()),
     fetch(`tunes/${e}.mid`).then((e) => e.arrayBuffer()),
   ]);
   return Pl(t, new w.Midi(n));
 }
-async function Ul() {
+async function Wl() {
   let e = await fetch(`tunes/manifest.json`).then((e) => e.json());
   document.querySelector(`#session-title`).textContent = e.session;
   let t = document.querySelector(`#tunes`);
   for (let n of e.tunes)
     try {
-      let e = await Hl(n),
+      let e = await Ul(n),
         r = document.createElement(`tune-looper`);
       ((r.tune = e), t.appendChild(r));
     } catch (e) {
@@ -14573,6 +14578,6 @@ async function Ul() {
         (r.textContent = `Couldn't load "${n}": ${e.message}`),
         t.appendChild(r));
     }
-  Vl(document);
+  Hl(document);
 }
-Ul();
+Wl();
