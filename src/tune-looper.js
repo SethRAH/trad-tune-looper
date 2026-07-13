@@ -148,7 +148,20 @@ export class TuneLooper extends HTMLElement {
     if (this.#countIn) {
       cursor = this.#scheduleMetronomeForMeasure(cursor, /* alwaysClick */ true);
     }
-    this.#runLoop(cursor, measureSequence, true);
+    // The pickup rule (PRD §4) suppresses a pickup reached out of silence —
+    // but starting playback at the tune's actual first bar isn't silence,
+    // it's the tune's own beginning, so only suppress here when playback
+    // enters somewhere other than measure 0.
+    const suppressInitialPickup = measureSequence[0] !== 0;
+    // A pickup note's offsetTicks is negative (it leads into the downbeat),
+    // so without a count-in bar to push `cursor` forward first, `cursor +
+    // offsetTicks` goes negative and Tone.js can't schedule it. Reserve the
+    // pickup's own duration as lead-in so its earliest note lands at tick 0
+    // instead.
+    if (!suppressInitialPickup) {
+      cursor = Math.max(cursor, tune.downbeatTick);
+    }
+    this.#runLoop(cursor, measureSequence, suppressInitialPickup);
 
     transport.start();
   }
