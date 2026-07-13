@@ -608,16 +608,22 @@ export class TuneLooper extends HTMLElement {
       : '';
 
     const attributionHtml = tune.attribution
-      ? `<div class="tl-attribution">
-           Contains information from <a href="${tune.attribution.sourceUrl}" target="_blank" rel="noopener">${tune.attribution.source}</a>,
-           which is made available here under the Open Database License
-           (<a href="${tune.attribution.licenseUrl}" target="_blank" rel="noopener">${tune.attribution.license}</a>).
-           ${
-             tune.attribution.contributor
-               ? `Added by ${tune.attribution.contributor}${tune.attribution.contributedDate ? ` on ${tune.attribution.contributedDate}` : ''}.`
-               : ''
-           }
-         </div>`
+      ? tune.attribution.sourceUrl
+        ? `<div class="tl-attribution">
+             Contains information from <a href="${tune.attribution.sourceUrl}" target="_blank" rel="noopener">${tune.attribution.source}</a>,
+             which is made available here under the Open Database License
+             (<a href="${tune.attribution.licenseUrl}" target="_blank" rel="noopener">${tune.attribution.license}</a>).
+             ${
+               tune.attribution.contributor
+                 ? `Added by ${tune.attribution.contributor}${tune.attribution.contributedDate ? ` on ${tune.attribution.contributedDate}` : ''}.`
+                 : ''
+             }
+           </div>`
+        : `<div class="tl-attribution">
+             Transcribed from <em>${tune.attribution.sourceTitle ?? tune.attribution.source}</em>${
+               tune.attribution.contributor ? ` by ${tune.attribution.contributor}` : ''
+             }. Used with permission${tune.attribution.permissionScope === 'site-only' ? ' for this site only' : ''}.
+           </div>`
       : '';
 
     this.innerHTML = `

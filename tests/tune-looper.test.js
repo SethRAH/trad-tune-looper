@@ -560,6 +560,27 @@ describe('<tune-looper>', () => {
     expect(attribution.textContent).toContain('Added by someuser on 2004-06-08.');
   });
 
+  it('renders book-sourced attribution without dangling links', () => {
+    el.tune = {
+      ...makeTune(),
+      attribution: {
+        source: 'book',
+        sourceTitle: '300 Gems of Irish Music for All Instruments',
+        contributor: 'Grey Larsen',
+        license: 'used-with-permission',
+        permissionScope: 'site-only',
+      },
+    };
+
+    const attribution = el.querySelector('.tl-attribution');
+    expect(attribution).not.toBeNull();
+    expect(attribution.querySelector('a')).toBeNull();
+    expect(attribution.textContent).toContain(
+      'Transcribed from 300 Gems of Irish Music for All Instruments by Grey Larsen.',
+    );
+    expect(attribution.textContent).toContain('Used with permission for this site only.');
+  });
+
   it('defaults the tempo slider to the practiceTempo', () => {
     expect(el.getState().bpm).toBe(90);
     expect(el.querySelector('.tl-tempo-slider').value).toBe('90');
