@@ -265,3 +265,28 @@ tune-looper {
   gap: var(--space-1);
   display: flex;
 }
+.site-footer {
+  max-width: 48rem;
+  padding: 0 var(--space-3) var(--space-5);
+  margin: 0 auto;
+}
+.ai-disclosure {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-4);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.ai-disclosure summary {
+  cursor: pointer;
+  padding: var(--space-2) 0;
+  color: var(--fg);
+  font-weight: 700;
+}
+.ai-disclosure p {
+  margin: var(--space-2) 0;
+}
+.ai-disclosure a {
+  color: var(--accent);
+}

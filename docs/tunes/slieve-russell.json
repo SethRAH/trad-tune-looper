@@ -1,0 +1,35 @@
+{
+  "id": "slieve-russell",
+  "title": "Slieve Russell",
+  "type": "jig",
+  "midi": "tunes/slieve-russell.mid",
+  "timeSignatureOverride": [6, 8],
+  "pickupBeats": 0,
+
+  "parts": [
+    {
+      "name": "A",
+      "startMeasure": 1,
+      "bars": 8,
+      "repeats": 2
+    },
+    {
+      "name": "B",
+      "startMeasure": 9,
+      "bars": 8,
+      "repeats": 2
+    }
+  ],
+
+  "hints": {
+    "key": "A Dorian"
+  },
+
+  "attribution": {
+    "source": "book",
+    "sourceTitle": "300 Gems of Irish Music for All Instruments",
+    "contributor": "Grey Larsen",
+    "license": "used-with-permission",
+    "permissionScope": "site-only"
+  }
+}
