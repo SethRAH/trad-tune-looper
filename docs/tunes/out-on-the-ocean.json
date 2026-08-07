@@ -1,0 +1,36 @@
+{
+  "id": "out-on-the-ocean",
+  "title": "Out on the Ocean",
+  "type": "jig",
+  "midi": "tunes/out-on-the-ocean.mid",
+  "timeSignatureOverride": [6, 8],
+  "pickupBeats": 0,
+
+  "parts": [
+    {
+      "name": "A",
+      "startMeasure": 1,
+      "bodyBars": 7,
+      "repeats": 2,
+      "endings": [{ "bars": 1 }, { "bars": 1 }]
+    },
+    {
+      "name": "B",
+      "startMeasure": 10,
+      "bars": 16,
+      "repeats": 1
+    }
+  ],
+
+  "hints": {
+    "key": "G Ionian"
+  },
+
+  "attribution": {
+    "source": "book",
+    "sourceTitle": "300 Gems of Irish Music for All Instruments",
+    "contributor": "Grey Larsen",
+    "license": "used-with-permission",
+    "permissionScope": "site-only"
+  }
+}
